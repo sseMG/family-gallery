@@ -1,23 +1,24 @@
-/** Normalize DB row for UI (aspect, display URL). */
-export function normalizePhoto(row) {
+/** Normalize DB row for UI (aspect, display URL, favorites). */
+export function normalizePhoto(row, { favoriteIds } = {}) {
   if (!row) return null
   const width = row.width ?? null
   const height = row.height ?? null
+  const favoriteCount = row.favorites?.[0]?.count ?? row.favorite_count ?? 0
+
   return {
     ...row,
     aspect: row.aspect || deriveAspect(width, height),
+    favorite_count: favoriteCount,
+    is_favorited: favoriteIds ? favoriteIds.has(row.id) : Boolean(row.is_favorited),
   }
 }
 
 export function deriveAspect(width, height) {
-  if (!width || !height) return 'square'
-  const ratio = width / height
-  if (ratio > 1.15) return 'wide'
-  if (ratio < 0.85) return 'tall'
-  return 'square'
+  if (!width || !height) return null
+  return parseFloat((width / height).toFixed(4))
 }
 
-export function getPhotoDisplayUrl(photo, width, height) {
+export function getPhotoDisplayUrl(photo, width) {
   if (!photo?.url) return ''
   const url = photo.url
   if (!width || !url.includes('res.cloudinary.com')) return url

@@ -8,6 +8,8 @@ import Gallery from './pages/Gallery'
 import Album from './pages/Album'
 import Timeline from './pages/Timeline'
 import Login from './pages/Login'
+import Favorites from './pages/Favorites'
+import UploadModalHost from './components/layout/UploadModalHost'
 
 function AppRoutes() {
   useAuthListener()
@@ -17,6 +19,7 @@ function AppRoutes() {
   return (
     <div className="min-h-screen bg-dark">
       {!isLogin && <Navbar />}
+      <UploadModalHost />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route
@@ -48,6 +51,14 @@ function AppRoutes() {
             element={
               <PageTransition>
                 <Album />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/favorites"
+            element={
+              <PageTransition>
+                <Favorites />
               </PageTransition>
             }
           />

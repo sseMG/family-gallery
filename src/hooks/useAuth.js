@@ -2,6 +2,23 @@ import { useCallback, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useStore } from '../store'
 
+async function upsertProfile(user) {
+  if (!supabase || !user) return
+  await supabase.from('profiles').upsert(
+    {
+      id: user.id,
+      email: user.email ?? null,
+      display_name:
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split('@')[0] ||
+        'Family member',
+      avatar_url: user.user_metadata?.avatar_url ?? null,
+    },
+    { onConflict: 'id' },
+  )
+}
+
 export function useAuth() {
   const user = useStore((s) => s.user)
   const setUser = useStore((s) => s.setUser)
@@ -12,6 +29,7 @@ export function useAuth() {
     if (error) return { user: null, error }
     const sessionUser = data.session?.user ?? null
     setUser(sessionUser)
+    if (sessionUser) await upsertProfile(sessionUser)
     return { user: sessionUser, error: null }
   }, [setUser])
 
@@ -26,6 +44,7 @@ export function useAuth() {
       })
       if (error) return { user: null, error }
       setUser(data.user)
+      await upsertProfile(data.user)
       return { user: data.user, error: null }
     },
     [setUser],
@@ -38,6 +57,7 @@ export function useAuth() {
     }
     const { error } = await supabase.auth.signOut()
     setUser(null)
+    useStore.getState().setFavoritePhotoIds(new Set())
     return { error }
   }, [setUser])
 
@@ -50,7 +70,6 @@ export function useAuth() {
   }
 }
 
-/** Mount once in App to sync auth state with Zustand. */
 export function useAuthListener() {
   const setUser = useStore((s) => s.setUser)
 
@@ -58,13 +77,18 @@ export function useAuthListener() {
     if (!supabase) return
 
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
+      const sessionUser = data.session?.user ?? null
+      setUser(sessionUser)
+      if (sessionUser) upsertProfile(sessionUser)
     })
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      const sessionUser = session?.user ?? null
+      setUser(sessionUser)
+      if (sessionUser) upsertProfile(sessionUser)
+      if (!sessionUser) useStore.getState().setFavoritePhotoIds(new Set())
     })
 
     return () => subscription.unsubscribe()

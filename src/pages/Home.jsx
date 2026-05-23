@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Scene from '../components/three/Scene'
+import StatsBar from '../components/home/StatsBar'
 
 const containerVariants = {
   hidden: {},
@@ -24,12 +25,11 @@ export default function Home() {
       <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-gold/10 via-dark/50 to-dark" />
       <div className="pointer-events-none absolute -right-1/4 top-0 z-0 h-full w-1/2 bg-[radial-gradient(ellipse_at_center,rgba(201,169,110,0.08)_0%,transparent_65%)]" />
 
-      {/* 3D scene — behind content, does not block clicks */}
       <div className="pointer-events-none absolute inset-0 z-0 opacity-90 lg:left-1/3">
         <Scene />
       </div>
 
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col items-center justify-center px-5 py-12 text-center sm:px-8 lg:items-start lg:py-20 lg:pl-10 lg:pr-6 lg:text-left">
+      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col items-center justify-center px-5 py-12 text-center sm:px-8 lg:items-start lg:py-16 lg:pl-10 lg:pr-6 lg:text-left">
         <motion.div
           className="relative z-10 flex max-w-2xl flex-col items-center lg:items-start"
           variants={containerVariants}
@@ -66,6 +66,15 @@ export default function Home() {
               Explore the Gallery
             </Link>
           </motion.div>
+        </motion.div>
+
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="pointer-events-auto relative z-10 mt-14 w-full lg:mt-16"
+        >
+          <StatsBar />
         </motion.div>
       </section>
     </main>

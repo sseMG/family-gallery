@@ -8,12 +8,36 @@ function requireSupabase() {
   if (!supabase) throw new Error('Supabase is not configured.')
 }
 
+async function loadFavoriteIds(userId) {
+  if (!userId) return new Set()
+  const { data } = await supabase
+    .from('favorites')
+    .select('photo_id')
+    .eq('user_id', userId)
+  return new Set((data ?? []).map((r) => r.photo_id))
+}
+
+function mapPhotos(rows, favoriteIds) {
+  return (rows ?? []).map((row) => normalizePhoto(row, { favoriteIds }))
+}
+
 export function usePhotos() {
   const photos = useStore((s) => s.photos)
-  const setPhotos = useStore((s) => s.setPhotos)
   const user = useStore((s) => s.user)
+  const setFavoritePhotoIds = useStore((s) => s.setFavoritePhotoIds)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  const enrichAndStore = useCallback(
+    async (rows) => {
+      const favoriteIds = await loadFavoriteIds(user?.id)
+      setFavoritePhotoIds(favoriteIds)
+      const normalized = mapPhotos(rows, favoriteIds)
+      useStore.getState().setPhotos(normalized)
+      return normalized
+    },
+    [user?.id, setFavoritePhotoIds],
+  )
 
   const fetchPhotos = useCallback(async () => {
     requireSupabase()
@@ -21,7 +45,7 @@ export function usePhotos() {
     setError(null)
     const { data, error: fetchError } = await supabase
       .from('photos')
-      .select('*')
+      .select('*, favorites(count)')
       .order('created_at', { ascending: false })
 
     setLoading(false)
@@ -29,10 +53,9 @@ export function usePhotos() {
       setError(fetchError.message)
       return { photos: [], error: fetchError }
     }
-    const normalized = (data ?? []).map(normalizePhoto)
-    setPhotos(normalized)
+    const normalized = await enrichAndStore(data)
     return { photos: normalized, error: null }
-  }, [setPhotos])
+  }, [enrichAndStore])
 
   const fetchPhotosByYear = useCallback(
     async (year) => {
@@ -42,7 +65,7 @@ export function usePhotos() {
       setError(null)
       const { data, error: fetchError } = await supabase
         .from('photos')
-        .select('*')
+        .select('*, favorites(count)')
         .eq('year', year)
         .order('created_at', { ascending: false })
 
@@ -51,26 +74,40 @@ export function usePhotos() {
         setError(fetchError.message)
         return { photos: [], error: fetchError }
       }
-      const normalized = (data ?? []).map(normalizePhoto)
-      setPhotos(normalized)
+      const normalized = await enrichAndStore(data)
       return { photos: normalized, error: null }
     },
-    [fetchPhotos, setPhotos],
+    [fetchPhotos, enrichAndStore],
   )
 
-  const fetchPhotosByAlbum = useCallback(async (albumId) => {
-    requireSupabase()
-    const { data, error: fetchError } = await supabase
-      .from('photos')
-      .select('*')
-      .eq('album_id', albumId)
-      .order('created_at', { ascending: false })
+  const fetchPhotosByAlbum = useCallback(
+    async (albumId) => {
+      requireSupabase()
+      const favoriteIds = await loadFavoriteIds(user?.id)
+      const { data, error: fetchError } = await supabase
+        .from('photos')
+        .select('*, favorites(count)')
+        .eq('album_id', albumId)
+        .order('created_at', { ascending: false })
 
-    if (fetchError) {
-      return { photos: [], error: fetchError }
+      if (fetchError) {
+        return { photos: [], error: fetchError }
+      }
+      return { photos: mapPhotos(data, favoriteIds), error: null }
+    },
+    [user?.id],
+  )
+
+  const updateAlbumCoverIfNeeded = useCallback(async (albumId, url) => {
+    if (!albumId || !url) return
+    const { data: album } = await supabase
+      .from('albums')
+      .select('cover_url')
+      .eq('id', albumId)
+      .single()
+    if (album && !album.cover_url) {
+      await supabase.from('albums').update({ cover_url: url }).eq('id', albumId)
     }
-    const normalized = (data ?? []).map(normalizePhoto)
-    return { photos: normalized, error: null }
   }, [])
 
   const uploadPhoto = useCallback(
@@ -96,7 +133,7 @@ export function usePhotos() {
       const { data, error: insertError } = await supabase
         .from('photos')
         .insert(row)
-        .select()
+        .select('*, favorites(count)')
         .single()
 
       if (insertError) {
@@ -108,11 +145,16 @@ export function usePhotos() {
         throw new Error(insertError.message)
       }
 
-      const normalized = normalizePhoto(data)
-      setPhotos([normalized, ...useStore.getState().photos])
+      if (metadata.album_id) {
+        await updateAlbumCoverIfNeeded(metadata.album_id, cloudinary.url)
+      }
+
+      const favoriteIds = await loadFavoriteIds(user.id)
+      const normalized = normalizePhoto(data, { favoriteIds })
+      useStore.getState().setPhotos([normalized, ...useStore.getState().photos])
       return normalized
     },
-    [user, setPhotos],
+    [user, updateAlbumCoverIfNeeded],
   )
 
   const deletePhoto = useCallback(
@@ -129,15 +171,19 @@ export function usePhotos() {
       if (fetchError) throw new Error(fetchError.message)
 
       if (photo?.public_id) {
-        await deleteFromCloudinary(photo.public_id)
+        try {
+          await deleteFromCloudinary(photo.public_id)
+        } catch {
+          /* continue Supabase delete if edge function not deployed */
+        }
       }
 
       const { error: deleteError } = await supabase.from('photos').delete().eq('id', id)
       if (deleteError) throw new Error(deleteError.message)
 
-      setPhotos(useStore.getState().photos.filter((p) => p.id !== id))
+      useStore.getState().setPhotos(useStore.getState().photos.filter((p) => p.id !== id))
     },
-    [user, setPhotos],
+    [user],
   )
 
   return {

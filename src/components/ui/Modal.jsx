@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { usePhotos } from '../../hooks/usePhotos'
 import { useAlbums } from '../../hooks/useAlbums'
 
@@ -261,18 +261,21 @@ export default function Modal({ open, onClose, onSuccess }) {
               </div>
 
               {status === 'uploading' && (
-                <div>
-                  <div className="mb-1 flex justify-between text-xs text-cream/60">
-                    <span>Uploading…</span>
-                    <span>{progress}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-gold/10">
-                    <motion.div
-                      className="h-full bg-gold"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.2 }}
-                    />
+                <div className="flex flex-col items-center gap-3 py-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-gold" aria-hidden />
+                  <div className="w-full">
+                    <div className="mb-1 flex justify-between text-xs text-cream/60">
+                      <span>Uploading to Cloudinary…</span>
+                      <span>{progress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-gold/10">
+                      <motion.div
+                        className="h-full bg-gold"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}

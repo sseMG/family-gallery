@@ -14,7 +14,7 @@ import { useStore } from '../store'
 
 function AlbumsIndex() {
   const { isAdmin } = useAuth()
-  const { albums, loading, fetchAlbums } = useAlbums()
+  const { albums, loading, error, fetchAlbums } = useAlbums()
   const [createOpen, setCreateOpen] = useState(false)
 
   useEffect(() => {
@@ -53,6 +53,12 @@ function AlbumsIndex() {
             </button>
           )}
         </motion.header>
+
+        {error && (
+          <p className="mb-6 rounded border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-300">
+            {error}
+          </p>
+        )}
 
         {loading ? (
           <AlbumGridSkeleton />

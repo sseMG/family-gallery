@@ -3,18 +3,18 @@ import { motion } from 'framer-motion'
 import { Upload } from 'lucide-react'
 import PhotoGrid from '../components/gallery/PhotoGrid'
 import Lightbox from '../components/gallery/Lightbox'
-import UploadModal from '../components/ui/Modal'
 import { PhotoGridSkeleton } from '../components/ui/Skeleton'
 import { usePhotos } from '../hooks/usePhotos'
 import { useAuth } from '../hooks/useAuth'
+import { useStore } from '../store'
 import { getGalleryYears } from '../lib/photos'
 
 export default function Gallery() {
   const { user, isAdmin } = useAuth()
-  const { photos, loading, fetchPhotos, fetchPhotosByYear } = usePhotos()
+  const { photos, loading, error, fetchPhotos, fetchPhotosByYear } = usePhotos()
+  const setUploadModalOpen = useStore((s) => s.setUploadModalOpen)
   const [year, setYear] = useState('All')
   const [lightboxIndex, setLightboxIndex] = useState(null)
-  const [uploadOpen, setUploadOpen] = useState(false)
 
   const yearFilters = useMemo(() => {
     const fromData = getGalleryYears(photos)
@@ -23,17 +23,9 @@ export default function Gallery() {
   }, [photos])
 
   useEffect(() => {
-    if (year === 'All') {
-      fetchPhotos()
-    } else {
-      fetchPhotosByYear(year)
-    }
-  }, [year, fetchPhotos, fetchPhotosByYear])
-
-  const handleUploadSuccess = () => {
     if (year === 'All') fetchPhotos()
     else fetchPhotosByYear(year)
-  }
+  }, [year, fetchPhotos, fetchPhotosByYear])
 
   return (
     <main className="min-h-screen bg-dark">
@@ -59,7 +51,7 @@ export default function Gallery() {
           {isAdmin && user && (
             <button
               type="button"
-              onClick={() => setUploadOpen(true)}
+              onClick={() => setUploadModalOpen(true)}
               className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded border border-gold/40 bg-gold/15 px-5 py-2.5 text-sm font-semibold uppercase tracking-widest text-gold transition-all hover:border-gold hover:bg-gold/25 sm:self-auto"
             >
               <Upload className="h-4 w-4" />
@@ -67,6 +59,12 @@ export default function Gallery() {
             </button>
           )}
         </motion.header>
+
+        {error && (
+          <p className="mb-6 rounded border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-300">
+            {error}
+          </p>
+        )}
 
         <div className="mb-8 flex flex-wrap gap-2 sm:mb-10 sm:gap-3">
           {yearFilters.map((y) => {
@@ -109,12 +107,6 @@ export default function Gallery() {
         onNext={() =>
           setLightboxIndex((i) => (i < photos.length - 1 ? i + 1 : i))
         }
-      />
-
-      <UploadModal
-        open={uploadOpen}
-        onClose={() => setUploadOpen(false)}
-        onSuccess={handleUploadSuccess}
       />
     </main>
   )
