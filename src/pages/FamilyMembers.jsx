@@ -1,6 +1,24 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Pencil, Trash2, Loader2, Settings2 } from 'lucide-react'
+import { Plus, X, Pencil, Trash2, Loader2, Settings2, Phone, MapPin, Cake } from 'lucide-react'
+
+function FacebookIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  )
+}
+
+function InstagramIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  )
+}
 import { supabase } from '../lib/supabase'
 import { uploadToCloudinary } from '../lib/cloudinary'
 import { useAuth } from '../hooks/useAuth'
@@ -34,6 +52,7 @@ const memberGeneration = (m) => RELATIONSHIP_TO_GEN[m.relationship] || m.generat
 const emptyForm = {
   full_name: '', nickname: '', generation: 'kids',
   relationship: 'Cousin', birth_year: '', bio: '', avatar_url: '',
+  phone: '', facebook_url: '', instagram_url: '', birthday: '', location: '',
 }
 
 const inputClass = 'w-full rounded-lg border border-gold/20 bg-white/5 px-3 py-2.5 text-sm text-cream placeholder:text-cream/25 outline-none transition-colors focus:border-gold/60'
@@ -44,6 +63,48 @@ const DEFAULT_HEADER = {
   subtitle: 'The people who make us who we are',
 }
 
+function formatBirthday(dateStr) {
+  if (!dateStr) return null
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+}
+
+function SocialIcons({ member, size = 'sm' }) {
+  const iconSize = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4.5 w-4.5'
+  const btnSize = size === 'sm'
+    ? 'h-7 w-7'
+    : 'h-9 w-9'
+  if (!member.facebook_url && !member.instagram_url) return null
+  return (
+    <div className="flex items-center gap-2">
+      {member.facebook_url && (
+        <a
+          href={member.facebook_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          className={`${btnSize} inline-flex items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 transition-all hover:border-blue-400 hover:bg-blue-500/25 hover:text-blue-300 hover:shadow-[0_0_12px_rgba(59,130,246,0.3)]`}
+          title="Facebook"
+        >
+          <FacebookIcon className={iconSize} />
+        </a>
+      )}
+      {member.instagram_url && (
+        <a
+          href={member.instagram_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+          className={`${btnSize} inline-flex items-center justify-center rounded-full border border-pink-500/30 bg-pink-500/10 text-pink-400 transition-all hover:border-pink-400 hover:bg-pink-500/25 hover:text-pink-300 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)]`}
+          title="Instagram"
+        >
+          <InstagramIcon className={iconSize} />
+        </a>
+      )}
+    </div>
+  )
+}
+
 export default function FamilyMembers() {
   const { user } = useAuth()
   const isAdmin = Boolean(user)
@@ -51,8 +112,6 @@ export default function FamilyMembers() {
   const [loading, setLoading] = useState(true)
   const [activeGen, setActiveGen] = useState('all')
   const [selected, setSelected] = useState(null)
-  const [memberPhotos, setMemberPhotos] = useState([])
-  const [photosLoading, setPhotosLoading] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -136,20 +195,6 @@ export default function FamilyMembers() {
     setLoading(false)
   }
 
-  async function handleMemberClick(member) {
-    setSelected(member)
-    setMemberPhotos([])
-    setPhotosLoading(true)
-    const { data, error: photosError } = await supabase
-      .from('photo_family_members')
-      .select('photos(id, url, caption, year, aspect)')
-      .eq('member_id', member.id)
-      .limit(24)
-    if (photosError) setError(photosError.message)
-    setMemberPhotos((data || []).map(item => item.photos).filter(Boolean))
-    setPhotosLoading(false)
-  }
-
   function openAdd() {
     setEditTarget(null)
     setForm(emptyForm)
@@ -168,6 +213,11 @@ export default function FamilyMembers() {
       birth_year: member.birth_year || '',
       bio: member.bio || '',
       avatar_url: member.avatar_url || '',
+      phone: member.phone || '',
+      facebook_url: member.facebook_url || '',
+      instagram_url: member.instagram_url || '',
+      birthday: member.birthday || '',
+      location: member.location || '',
     })
     setAvatarPreview(member.avatar_url || null)
     setError(null)
@@ -194,12 +244,18 @@ export default function FamilyMembers() {
     setSaving(true)
     setError(null)
     const payload = {
-      ...form,
       full_name: form.full_name.trim(),
       nickname: form.nickname.trim() || null,
+      generation: form.generation,
+      relationship: form.relationship,
       birth_year: form.birth_year ? Number(form.birth_year) : null,
       bio: form.bio.trim() || null,
       avatar_url: form.avatar_url || null,
+      phone: form.phone.trim() || null,
+      facebook_url: form.facebook_url.trim() || null,
+      instagram_url: form.instagram_url.trim() || null,
+      birthday: form.birthday || null,
+      location: form.location.trim() || null,
     }
     let err
     let savedMember
@@ -298,7 +354,6 @@ export default function FamilyMembers() {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5">
             {filtered.map(member => (
               <motion.div key={member.id} whileHover={{ scale: 1.03 }} className="group relative">
-                {/* Edit button */}
                 {isAdmin && (
                   <button
                     onClick={e => { e.stopPropagation(); openEdit(member) }}
@@ -306,9 +361,8 @@ export default function FamilyMembers() {
                     <Pencil className="h-3 w-3" />
                   </button>
                 )}
-                <button onClick={() => handleMemberClick(member)}
+                <button onClick={() => setSelected(member)}
                   className="flex w-full flex-col items-center gap-3 rounded-xl border border-gold/10 bg-black/20 px-3 py-5 text-center transition-all hover:border-gold/35 hover:bg-gold/5">
-                  {/* Avatar */}
                   <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-gold/20 bg-gold/10 shadow-lg transition-all group-hover:border-gold/60 group-hover:shadow-[0_0_25px_rgba(201,169,110,0.2)]">
                     {member.avatar_url ? (
                       <img src={member.avatar_url} alt={member.full_name} className="h-full w-full object-cover" />
@@ -320,13 +374,18 @@ export default function FamilyMembers() {
                       </div>
                     )}
                   </div>
-                  <div>
+                  <div className="flex flex-col items-center gap-1">
                     <p className="font-serif text-sm font-semibold text-cream">{member.full_name}</p>
-                    {member.nickname && <p className="text-xs text-cream/40">"{member.nickname}"</p>}
-                    <span className="mt-1 inline-block rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs text-gold">
+                    {member.nickname && <p className="text-xs text-cream/40">&ldquo;{member.nickname}&rdquo;</p>}
+                    <span className="inline-block rounded-full border border-gold/20 bg-gold/10 px-2 py-0.5 text-xs text-gold">
                       {member.relationship}
                     </span>
-                    {member.birth_year && <p className="mt-1 text-xs text-cream/30">b. {member.birth_year}</p>}
+                    {member.location && (
+                      <span className="inline-flex items-center gap-1 text-xs text-cream/35">
+                        <MapPin className="h-3 w-3" /> {member.location}
+                      </span>
+                    )}
+                    <SocialIcons member={member} size="sm" />
                   </div>
                 </button>
               </motion.div>
@@ -360,43 +419,100 @@ export default function FamilyMembers() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-3 border-b border-gold/10 px-5 py-6">
-                <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-gold/40 bg-dark">
-                  {selected.avatar_url ? (
-                    <img src={selected.avatar_url} alt={selected.full_name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gold/10">
-                      <span className="font-serif text-3xl font-bold text-gold/50">{selected.full_name?.[0]}</span>
+              <div className="flex-1 overflow-y-auto">
+                {/* Avatar + Core Info */}
+                <div className="flex flex-col items-center gap-4 border-b border-gold/10 px-5 py-8">
+                  <div className="h-28 w-28 overflow-hidden rounded-full border-2 border-gold/40 bg-dark shadow-[0_0_30px_rgba(201,169,110,0.15)]">
+                    {selected.avatar_url ? (
+                      <img src={selected.avatar_url} alt={selected.full_name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gold/10">
+                        <span className="font-serif text-4xl font-bold text-gold/50">{selected.full_name?.[0]}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-serif text-xl font-bold text-cream">{selected.full_name}</h3>
+                    {selected.nickname && (
+                      <p className="mt-0.5 text-sm text-cream/50">&ldquo;{selected.nickname}&rdquo;</p>
+                    )}
+                    <span className="mt-2 inline-block rounded-full border border-gold/30 bg-gold/10 px-3 py-0.5 text-xs font-medium uppercase tracking-wider text-gold">
+                      {selected.relationship}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="space-y-4 border-b border-gold/10 px-5 py-6">
+                  {(selected.birthday || selected.birth_year) && (
+                    <div className="flex items-start gap-3">
+                      <Cake className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-cream/40">Birthday</p>
+                        <p className="text-sm text-cream">
+                          {selected.birthday ? formatBirthday(selected.birthday) : `b. ${selected.birth_year}`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selected.location && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-cream/40">Location</p>
+                        <p className="text-sm text-cream">{selected.location}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {user && selected.phone && (
+                    <div className="flex items-start gap-3">
+                      <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold/60" />
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-cream/40">Phone</p>
+                        <a href={`tel:${selected.phone}`} className="text-sm font-medium text-gold transition-colors hover:text-gold/80">
+                          {selected.phone}
+                        </a>
+                      </div>
                     </div>
                   )}
                 </div>
-                <div className="text-center">
-                  {selected.nickname && <p className="text-sm text-cream/50">"{selected.nickname}"</p>}
-                  <span className="mt-1 inline-block rounded-full border border-gold/30 bg-gold/10 px-3 py-0.5 text-xs font-medium uppercase tracking-wider text-gold">
-                    {selected.relationship}
-                  </span>
-                  {selected.birth_year && <p className="mt-1 text-xs text-cream/40">b. {selected.birth_year}</p>}
-                  {selected.bio && <p className="mt-3 text-sm leading-relaxed text-cream/60">{selected.bio}</p>}
-                </div>
-              </div>
 
-              <div className="flex-1 overflow-y-auto px-5 py-4">
-                <p className="mb-3 text-xs font-medium uppercase tracking-widest text-cream/40">Photos</p>
-                {photosLoading ? (
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="aspect-square animate-pulse rounded bg-gold/10" />
-                    ))}
+                {/* Bio */}
+                {selected.bio && (
+                  <div className="border-b border-gold/10 px-5 py-6">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-cream/40">About</p>
+                    <p className="text-sm leading-relaxed text-cream/70">{selected.bio}</p>
                   </div>
-                ) : memberPhotos.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-cream/30">No photos yet</p>
-                ) : (
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {memberPhotos.map(p => (
-                      <div key={p.id} className="aspect-square overflow-hidden rounded border border-gold/10">
-                        <img src={p.url} alt={p.caption || ''} className="h-full w-full object-cover" />
-                      </div>
-                    ))}
+                )}
+
+                {/* Social Links */}
+                {(selected.facebook_url || selected.instagram_url) && (
+                  <div className="px-5 py-6">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-cream/40">Social Media</p>
+                    <div className="flex gap-3">
+                      {selected.facebook_url && (
+                        <a
+                          href={selected.facebook_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400 transition-all hover:border-blue-400 hover:bg-blue-500/25 hover:shadow-[0_0_16px_rgba(59,130,246,0.25)]"
+                        >
+                          <FacebookIcon className="h-4 w-4" /> Facebook
+                        </a>
+                      )}
+                      {selected.instagram_url && (
+                        <a
+                          href={selected.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-lg border border-pink-500/30 bg-pink-500/10 px-4 py-2 text-sm font-medium text-pink-400 transition-all hover:border-pink-400 hover:bg-pink-500/25 hover:shadow-[0_0_16px_rgba(236,72,153,0.25)]"
+                        >
+                          <InstagramIcon className="h-4 w-4" /> Instagram
+                        </a>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -470,11 +586,36 @@ export default function FamilyMembers() {
                     {RELATIONSHIPS.map(r => <option key={r}>{r}</option>)}
                   </select>
                 </div>
-                <input placeholder="Birth Year e.g. 1970" type="number" value={form.birth_year}
+
+                {/* Birthday (date) */}
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gold/70">Birthday</label>
+                  <input type="date" value={form.birthday}
+                    onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))}
+                    className={inputClass + ' bg-dark'} />
+                </div>
+
+                <input placeholder="Birth Year e.g. 1970 (fallback if no birthday)" type="number" value={form.birth_year}
                   onChange={e => setForm(f => ({ ...f, birth_year: e.target.value }))} className={inputClass} />
+
+                <input placeholder="Location e.g. Lian, Batangas" value={form.location}
+                  onChange={e => setForm(f => ({ ...f, location: e.target.value }))} className={inputClass} />
+
                 <textarea placeholder="Short bio or memory..." value={form.bio} rows={3}
                   onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
                   className={inputClass + ' resize-none'} />
+
+                {/* Contact & Social section */}
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-gold/50">Contact & Social</p>
+
+                <input placeholder="Phone number e.g. +63 917 123 4567" value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className={inputClass} />
+
+                <input placeholder="Facebook URL" value={form.facebook_url}
+                  onChange={e => setForm(f => ({ ...f, facebook_url: e.target.value }))} className={inputClass} />
+
+                <input placeholder="Instagram URL" value={form.instagram_url}
+                  onChange={e => setForm(f => ({ ...f, instagram_url: e.target.value }))} className={inputClass} />
 
                 {error && <p className="text-xs text-red-400">{error}</p>}
 

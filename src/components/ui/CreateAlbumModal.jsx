@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, CheckCircle, AlertCircle } from 'lucide-react'
-import { useAlbums } from '../../hooks/useAlbums'
+import { X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
 const inputClass =
   'w-full rounded-sm border border-gold/20 bg-dark px-4 py-3 text-cream placeholder:text-cream/30 outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold/30'
 
-export default function CreateAlbumModal({ open, onClose, onSuccess }) {
-  const { createAlbum } = useAlbums()
+export default function AlbumFormModal({ open, onClose, onSubmit, album = null }) {
+  const isEdit = Boolean(album)
   const [title, setTitle] = useState('')
   const [year, setYear] = useState(String(new Date().getFullYear()))
   const [description, setDescription] = useState('')
@@ -15,14 +14,20 @@ export default function CreateAlbumModal({ open, onClose, onSuccess }) {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    if (!open) {
-      setTitle('')
-      setYear(String(new Date().getFullYear()))
-      setDescription('')
+    if (open) {
+      if (album) {
+        setTitle(album.title || '')
+        setYear(album.year != null ? String(album.year) : String(new Date().getFullYear()))
+        setDescription(album.description || '')
+      } else {
+        setTitle('')
+        setYear(String(new Date().getFullYear()))
+        setDescription('')
+      }
       setStatus('idle')
       setMessage('')
     }
-  }, [open])
+  }, [open, album])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -36,18 +41,17 @@ export default function CreateAlbumModal({ open, onClose, onSuccess }) {
     setMessage('')
 
     try {
-      await createAlbum({
+      await onSubmit({
         title: title.trim(),
-        year,
+        year: year ? Number(year) : null,
         description: description.trim(),
       })
       setStatus('success')
-      setMessage('Album created.')
-      onSuccess?.()
+      setMessage(isEdit ? 'Album updated.' : 'Album created.')
       setTimeout(onClose, 1000)
     } catch (err) {
       setStatus('error')
-      setMessage(err.message || 'Failed to create album.')
+      setMessage(err.message || 'Failed to save album.')
     }
   }
 
@@ -74,7 +78,7 @@ export default function CreateAlbumModal({ open, onClose, onSuccess }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="font-serif text-xl text-gold">New Album</h2>
+              <h2 className="font-serif text-xl text-gold">{isEdit ? 'Edit Album' : 'New Album'}</h2>
               <button
                 type="button"
                 onClick={onClose}
@@ -140,7 +144,16 @@ export default function CreateAlbumModal({ open, onClose, onSuccess }) {
                 disabled={status === 'loading'}
                 className="w-full rounded border border-gold/40 bg-gold/15 py-3 text-sm font-semibold uppercase tracking-widest text-gold hover:bg-gold/25 disabled:opacity-50"
               >
-                {status === 'loading' ? 'Creating…' : 'Create Album'}
+                {status === 'loading' ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving…
+                  </span>
+                ) : isEdit ? (
+                  'Save Changes'
+                ) : (
+                  'Create Album'
+                )}
               </button>
             </form>
           </motion.div>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CalendarDays } from 'lucide-react'
 import { formatEventDate, useFamilyEvents } from '../hooks/useFamilyEvents'
+import { RecentMemories, FeaturedAlbums, OnThisDay, FamilyMembersPreview } from '../components/home/HomeSections'
 import heroBg from '../assets/hero-bg.jpeg'
 import heroVideo from '../assets/hero-bg.mp4'
 
@@ -67,6 +68,7 @@ function UpcomingMoments() {
 
 export default function Home() {
   return (
+    <>
     <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden sm:min-h-[calc(100vh-4.5rem)]">
 
       {/* Layer 1 - Background photo */}
@@ -157,5 +159,22 @@ export default function Home() {
         </div>
       </section>
     </main>
+
+    {/* Scroll-down sections */}
+    <div className="bg-dark">
+      <div className="mx-auto border-t border-gold/10">
+        <RecentMemories />
+      </div>
+      <div className="mx-auto border-t border-gold/10">
+        <FeaturedAlbums />
+      </div>
+      <div className="mx-auto border-t border-gold/10">
+        <OnThisDay />
+      </div>
+      <div className="mx-auto border-t border-gold/10">
+        <FamilyMembersPreview />
+      </div>
+    </div>
+    </>
   )
 }

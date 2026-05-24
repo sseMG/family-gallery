@@ -107,6 +107,52 @@ export function useAlbums() {
     return album
   }, [])
 
+  const updateAlbum = useCallback(async (id, { title, year, description, cover_url }) => {
+    requireSupabase()
+    const updates = {
+      title: title?.trim() || undefined,
+      year: year != null ? (year ? Number(year) : null) : undefined,
+      description: description !== undefined ? (description?.trim() || null) : undefined,
+    }
+    if (cover_url !== undefined) updates.cover_url = cover_url || null
+    // Remove undefined keys
+    Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k])
+
+    const { data, error: updateError } = await supabase
+      .from('albums')
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (updateError) throw new Error(updateError.message)
+    setAlbums((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, ...normalizeAlbum({ ...data, photo_count: a.photo_count }) } : a)),
+    )
+    return normalizeAlbum({ ...data, photo_count: 0 })
+  }, [])
+
+  const deleteAlbum = useCallback(async (id) => {
+    requireSupabase()
+    // Unlink photos from album first (set album_id to null)
+    await supabase.from('photos').update({ album_id: null }).eq('album_id', id)
+    const { error: deleteError } = await supabase.from('albums').delete().eq('id', id)
+    if (deleteError) throw new Error(deleteError.message)
+    setAlbums((prev) => prev.filter((a) => a.id !== id))
+  }, [])
+
+  const setCoverPhoto = useCallback(async (albumId, coverUrl) => {
+    requireSupabase()
+    const { error: updateError } = await supabase
+      .from('albums')
+      .update({ cover_url: coverUrl })
+      .eq('id', albumId)
+    if (updateError) throw new Error(updateError.message)
+    setAlbums((prev) =>
+      prev.map((a) => (a.id === albumId ? { ...a, cover_url: coverUrl } : a)),
+    )
+  }, [])
+
   return {
     albums,
     loading,
@@ -114,5 +160,8 @@ export function useAlbums() {
     fetchAlbums,
     fetchAlbumById,
     createAlbum,
+    updateAlbum,
+    deleteAlbum,
+    setCoverPhoto,
   }
 }

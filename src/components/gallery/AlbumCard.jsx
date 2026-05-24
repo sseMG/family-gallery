@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Pencil, Trash2 } from 'lucide-react'
 
 const PLACEHOLDER_COVER =
   'https://picsum.photos/seed/silva-album/700/525'
 
-export default function AlbumCard({ album, index = 0 }) {
+export default function AlbumCard({ album, index = 0, isAdmin, onEdit, onDelete }) {
   const count = album.photo_count ?? 0
   const cover = album.cover_url || PLACEHOLDER_COVER
 
@@ -13,7 +14,26 @@ export default function AlbumCard({ album, index = 0 }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.06 }}
+      className="group/card relative"
     >
+      {isAdmin && (
+        <div className="absolute right-2 top-2 z-20 hidden gap-1 group-hover/card:flex">
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(album) }}
+            className="rounded-full border border-gold/30 bg-dark/80 p-1.5 text-gold/70 transition-all hover:bg-gold/20 hover:text-gold"
+            title="Edit album"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(album) }}
+            className="rounded-full border border-red-400/30 bg-dark/80 p-1.5 text-red-400/70 transition-all hover:bg-red-400/20 hover:text-red-400"
+            title="Delete album"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      )}
       <Link
         to={`/album/${album.id}`}
         className="group block overflow-hidden rounded-xl border border-gold/10 bg-dark/40 transition-all duration-300 hover:border-gold/50 hover:shadow-[0_0_28px_rgba(201,169,110,0.18)]"
