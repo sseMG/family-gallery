@@ -31,30 +31,50 @@ export function usePhotos() {
 
   const enrichAndStore = useCallback(
     async (rows) => {
-      const favoriteIds = await loadFavoriteIds(user?.id)
+      const userId = useStore.getState().user?.id
+      const favoriteIds = await loadFavoriteIds(userId)
       setFavoritePhotoIds(favoriteIds)
       const normalized = mapPhotos(rows, favoriteIds)
       useStore.getState().setPhotos(normalized)
       return normalized
     },
-    [user?.id, setFavoritePhotoIds],
+    [setFavoritePhotoIds],
   )
 
   const fetchPhotos = useCallback(async () => {
     requireSupabase()
     setLoading(true)
     setError(null)
+
     const { data, error: fetchError } = await supabase
       .from('photos')
-      .select('*, favorites(count)')
+      .select('*')
       .order('created_at', { ascending: false })
 
-    setLoading(false)
     if (fetchError) {
+      setLoading(false)
       setError(fetchError.message)
       return { photos: [], error: fetchError }
     }
-    const normalized = await enrichAndStore(data)
+
+    // Fetch favorite counts separately (works for both anon and auth)
+    let favCounts = {}
+    const { data: favData } = await supabase
+      .from('favorites')
+      .select('photo_id')
+    if (favData) {
+      for (const fav of favData) {
+        favCounts[fav.photo_id] = (favCounts[fav.photo_id] || 0) + 1
+      }
+    }
+
+    const rows = (data ?? []).map(row => ({
+      ...row,
+      favorite_count: favCounts[row.id] || 0,
+    }))
+
+    setLoading(false)
+    const normalized = await enrichAndStore(rows)
     return { photos: normalized, error: null }
   }, [enrichAndStore])
 
@@ -64,18 +84,36 @@ export function usePhotos() {
       requireSupabase()
       setLoading(true)
       setError(null)
+
       const { data, error: fetchError } = await supabase
         .from('photos')
-        .select('*, favorites(count)')
+        .select('*')
         .eq('year', year)
         .order('created_at', { ascending: false })
 
-      setLoading(false)
       if (fetchError) {
+        setLoading(false)
         setError(fetchError.message)
         return { photos: [], error: fetchError }
       }
-      const normalized = await enrichAndStore(data)
+
+      let favCounts = {}
+      const { data: favData } = await supabase
+        .from('favorites')
+        .select('photo_id')
+      if (favData) {
+        for (const fav of favData) {
+          favCounts[fav.photo_id] = (favCounts[fav.photo_id] || 0) + 1
+        }
+      }
+
+      const rows = (data ?? []).map(row => ({
+        ...row,
+        favorite_count: favCounts[row.id] || 0,
+      }))
+
+      setLoading(false)
+      const normalized = await enrichAndStore(rows)
       return { photos: normalized, error: null }
     },
     [fetchPhotos, enrichAndStore],

@@ -45,12 +45,16 @@ export function useAlbums() {
     setLoading(true)
     setError(null)
 
-    const [albumsRes, coverMap] = await Promise.all([
+    const [albumsRes, coverMap, photoCounts] = await Promise.all([
       supabase
         .from('albums')
-        .select('*, photos(count)')
+        .select('*')
         .order('year', { ascending: false }),
       fetchCoverMap(),
+      supabase
+        .from('photos')
+        .select('album_id')
+        .not('album_id', 'is', null),
     ])
 
     setLoading(false)
@@ -59,8 +63,14 @@ export function useAlbums() {
       return { albums: [], error: albumsRes.error }
     }
 
+    // Count photos per album manually
+    const countMap = {}
+    for (const row of photoCounts.data ?? []) {
+      countMap[row.album_id] = (countMap[row.album_id] || 0) + 1
+    }
+
     const normalized = (albumsRes.data ?? []).map((row) =>
-      normalizeAlbum(row, coverMap),
+      normalizeAlbum({ ...row, photo_count: countMap[row.id] || 0 }, coverMap),
     )
     setAlbums(normalized)
     return { albums: normalized, error: null }
@@ -68,13 +78,15 @@ export function useAlbums() {
 
   const fetchAlbumById = useCallback(async (id) => {
     requireSupabase()
-    const [albumRes, coverMap] = await Promise.all([
-      supabase.from('albums').select('*, photos(count)').eq('id', id).single(),
+    const [albumRes, coverMap, photoCounts] = await Promise.all([
+      supabase.from('albums').select('*').eq('id', id).single(),
       fetchCoverMap(),
+      supabase.from('photos').select('album_id').eq('album_id', id),
     ])
 
     if (albumRes.error) return { album: null, error: albumRes.error }
-    return { album: normalizeAlbum(albumRes.data, coverMap), error: null }
+    const row = { ...albumRes.data, photo_count: photoCounts.data?.length || 0 }
+    return { album: normalizeAlbum(row, coverMap), error: null }
   }, [])
 
   const createAlbum = useCallback(async ({ title, year, description }) => {
@@ -86,11 +98,11 @@ export function useAlbums() {
         year: year ? Number(year) : null,
         description: description || null,
       })
-      .select('*, photos(count)')
+      .select('*')
       .single()
 
     if (insertError) throw new Error(insertError.message)
-    const album = normalizeAlbum(data)
+    const album = normalizeAlbum({ ...data, photo_count: 0 })
     setAlbums((prev) => [album, ...prev])
     return album
   }, [])

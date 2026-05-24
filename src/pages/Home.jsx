@@ -122,7 +122,7 @@ export default function Home() {
             className="mt-6 max-w-lg text-base leading-relaxed text-cream sm:text-lg"
           >
             A living archive of the moments that shaped us — holidays, milestones,
-            and everyday joy, preserved in warmth and light.
+            and everyday joy, preserved in warmth and light. eme lang
           </motion.p>
 
           <motion.div variants={fadeUp}>
