@@ -11,7 +11,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 function isValidSupabaseUrl(url) {
   if (typeof url !== 'string' || !url.startsWith('https://')) return false
   if (url.includes('supabase.com/dashboard')) return false
-  return url.includes('.supabase.co')
+  try {
+    const { hostname } = new URL(url)
+    return hostname.length > 0
+  } catch {
+    return false
+  }
 }
 
 function warnEnvMisconfiguration() {

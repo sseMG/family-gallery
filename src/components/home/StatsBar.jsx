@@ -29,14 +29,6 @@ export default function StatsBar() {
     fetchStats()
   }, [fetchStats])
 
-  if (error && !loading) {
-    return (
-      <p className="text-center text-sm text-cream/40">
-        Stats unavailable — check Supabase connection.
-      </p>
-    )
-  }
-
   return (
     <div className="relative z-10 mx-auto grid w-full max-w-3xl grid-cols-3 gap-4 px-5 sm:gap-6">
       <StatItem label="Photos" value={loading ? 0 : stats.photos} delay={0.2} />

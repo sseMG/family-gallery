@@ -12,8 +12,7 @@ export function useStats() {
 
   const fetchStats = useCallback(async () => {
     if (!supabase) {
-      setError('Supabase is not configured.')
-      return { stats, error: new Error('Supabase is not configured.') }
+      return { stats, error: null }
     }
 
     setLoading(true)

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadToCloudinary, deleteFromCloudinary } from '../lib/cloudinary'
 import { normalizePhoto, deriveAspect } from '../lib/photos'
+import { generateImageHash, checkDuplicateHash } from '../lib/hash'
 import { useStore } from '../store'
 
 function requireSupabase() {
@@ -115,6 +116,15 @@ export function usePhotos() {
       requireSupabase()
       if (!user) throw new Error('You must be signed in to upload photos.')
 
+      // Generate hash for duplicate detection
+      const hash = await generateImageHash(file)
+      
+      // Check for duplicates
+      const isDuplicate = await checkDuplicateHash(hash, supabase)
+      if (isDuplicate) {
+        throw new Error('This photo appears to be a duplicate of one already in the gallery.')
+      }
+
       const cloudinary = await uploadToCloudinary(file, onProgress)
 
       const row = {
@@ -128,6 +138,7 @@ export function usePhotos() {
         width: cloudinary.width,
         height: cloudinary.height,
         aspect: deriveAspect(cloudinary.width, cloudinary.height),
+        hash,
       }
 
       const { data, error: insertError } = await supabase
@@ -155,6 +166,45 @@ export function usePhotos() {
       return normalized
     },
     [user, updateAlbumCoverIfNeeded],
+  )
+
+  const updatePhoto = useCallback(
+    async (id, updates) => {
+      requireSupabase()
+      if (!user) throw new Error('You must be signed in to update photos.')
+
+      // Update and return the row in one call (no aggregate)
+      const { data, error: updateError } = await supabase
+        .from('photos')
+        .update(updates)
+        .eq('id', id)
+        .select('*')
+
+      if (updateError) throw new Error(updateError.message)
+
+      // If no rows were updated, the RLS policy blocked it
+      if (!data || data.length === 0) {
+        throw new Error('Update failed — you may not have permission to edit this photo.')
+      }
+
+      const updatedRow = data[0]
+
+      // Update photo in store directly with what we know
+      const favoriteIds = await loadFavoriteIds(user.id)
+      // Manually add favorites count from existing store photo
+      const existingPhoto = useStore.getState().photos.find((p) => p.id === id)
+      const rowWithFavorites = {
+        ...updatedRow,
+        favorites: [{ count: existingPhoto?.favorite_count ?? 0 }],
+      }
+      const normalized = normalizePhoto(rowWithFavorites, { favoriteIds })
+      useStore.getState().setPhotos(
+        useStore.getState().photos.map((p) => (p.id === id ? normalized : p))
+      )
+
+      return normalized
+    },
+    [user],
   )
 
   const deletePhoto = useCallback(
@@ -194,6 +244,7 @@ export function usePhotos() {
     fetchPhotosByYear,
     fetchPhotosByAlbum,
     uploadPhoto,
+    updatePhoto,
     deletePhoto,
   }
 }

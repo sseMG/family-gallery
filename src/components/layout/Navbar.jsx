@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { Menu, X, Upload, Heart } from 'lucide-react'
+import { Menu, X, Upload } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useStore } from '../../store'
 
@@ -54,17 +54,23 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden items-center gap-5 md:flex">
+          <NavLink to="/" className={linkClass}>
+            Home
+          </NavLink>
           <NavLink to="/gallery" className={linkClass}>
             Gallery
-          </NavLink>
-          <NavLink to="/timeline" className={linkClass}>
-            Timeline
           </NavLink>
           <NavLink to="/albums" className={linkClass}>
             Albums
           </NavLink>
-          <NavLink to="/favorites" className={linkClass}>
-            Favorites
+          <NavLink to="/timeline" className={linkClass}>
+            Stories
+          </NavLink>
+          <NavLink to="/calendar" className={linkClass}>
+            Calendar
+          </NavLink>
+          <NavLink to="/members" className={linkClass}>
+            Family Members
           </NavLink>
 
           {isAdmin && (
@@ -74,7 +80,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-1.5 rounded border border-gold/35 bg-gold/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gold transition-colors hover:bg-gold/20"
             >
               <Upload className="h-3.5 w-3.5" />
-              Upload
+              Memory Drop
             </button>
           )}
 
@@ -91,7 +97,7 @@ export default function Navbar() {
             </div>
           ) : (
             <NavLink to="/login" className={linkClass}>
-              Admin
+              Login
             </NavLink>
           )}
         </div>
@@ -121,24 +127,23 @@ export default function Navbar() {
       {menuOpen && (
         <div className="border-t border-gold/15 bg-dark px-5 py-4 md:hidden">
           <div className="flex flex-col gap-1">
+            <NavLink to="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
+              Home
+            </NavLink>
             <NavLink to="/gallery" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
               Gallery
-            </NavLink>
-            <NavLink to="/timeline" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
-              Timeline
             </NavLink>
             <NavLink to="/albums" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
               Albums
             </NavLink>
-            <NavLink
-              to="/favorites"
-              className={mobileLinkClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              <span className="inline-flex items-center gap-2">
-                <Heart className="h-4 w-4" />
-                Favorites
-              </span>
+            <NavLink to="/timeline" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
+              Stories
+            </NavLink>
+            <NavLink to="/calendar" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
+              Calendar
+            </NavLink>
+            <NavLink to="/members" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
+              Family Members
             </NavLink>
           </div>
 
@@ -163,7 +168,7 @@ export default function Navbar() {
                 className={mobileLinkClass}
                 onClick={() => setMenuOpen(false)}
               >
-                Admin login
+                Login
               </NavLink>
             )}
           </div>

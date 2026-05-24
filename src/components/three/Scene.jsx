@@ -44,10 +44,9 @@ function FloatingFrames() {
 
 export default function Scene() {
   return (
-    <div className="relative z-0 h-full min-h-[320px] w-full">
+    <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
       <Canvas
-        className="!relative z-0 h-full w-full"
-        style={{ position: 'relative' }}
+        style={{ background: 'transparent', width: '100%', height: '100%' }}
         camera={{ position: [0, 0, 7], fov: 45 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true }}

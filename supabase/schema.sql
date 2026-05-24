@@ -42,15 +42,30 @@ create table if not exists public.favorites (
   unique (user_id, photo_id)
 );
 
+create table if not exists public.family_events (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text,
+  event_date date not null,
+  event_time time,
+  location text,
+  type text not null default 'Other',
+  created_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists photos_year_idx on public.photos (year desc);
 create index if not exists photos_album_id_idx on public.photos (album_id);
 create index if not exists favorites_photo_id_idx on public.favorites (photo_id);
 create index if not exists favorites_user_id_idx on public.favorites (user_id);
+create index if not exists family_events_event_date_idx on public.family_events (event_date asc);
+create index if not exists family_events_created_by_idx on public.family_events (created_by);
 
 alter table public.albums enable row level security;
 alter table public.photos enable row level security;
 alter table public.profiles enable row level security;
 alter table public.favorites enable row level security;
+alter table public.family_events enable row level security;
 
 -- Albums
 create policy "Albums are viewable by everyone"
@@ -94,3 +109,16 @@ create policy "Users can insert own favorites"
 
 create policy "Users can delete own favorites"
   on public.favorites for delete to authenticated using (auth.uid() = user_id);
+
+-- Family events
+create policy "Family events are viewable by everyone"
+  on public.family_events for select using (true);
+
+create policy "Authenticated users can insert family events"
+  on public.family_events for insert to authenticated with check (auth.uid() = created_by);
+
+create policy "Authenticated users can update family events"
+  on public.family_events for update to authenticated using (true);
+
+create policy "Authenticated users can delete family events"
+  on public.family_events for delete to authenticated using (true);

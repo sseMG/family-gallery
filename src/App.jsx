@@ -7,8 +7,10 @@ import Home from './pages/Home'
 import Gallery from './pages/Gallery'
 import Album from './pages/Album'
 import Timeline from './pages/Timeline'
+import Calendar from './pages/Calendar'
 import Login from './pages/Login'
 import Favorites from './pages/Favorites'
+import FamilyMembers from './pages/FamilyMembers'
 import UploadModalHost from './components/layout/UploadModalHost'
 
 function AppRoutes() {
@@ -67,6 +69,22 @@ function AppRoutes() {
             element={
               <PageTransition>
                 <Timeline />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <PageTransition>
+                <Calendar />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/members"
+            element={
+              <PageTransition>
+                <FamilyMembers />
               </PageTransition>
             }
           />

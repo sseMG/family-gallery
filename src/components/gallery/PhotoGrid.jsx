@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, Trash2, MapPin, Calendar } from 'lucide-react'
+import { Heart, Trash2, MapPin, Calendar, Pencil } from 'lucide-react'
 import { getPhotoDisplayUrl } from '../../lib/photos'
 import { useAuth } from '../../hooks/useAuth'
 import { useFavorites } from '../../hooks/useFavorites'
 import { usePhotos } from '../../hooks/usePhotos'
+import PhotoEditModal from '../ui/PhotoEditModal'
 
 const aspectClass = {
   tall: 'aspect-[3/4]',
@@ -18,6 +19,12 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true }) {
   const { deletePhoto } = usePhotos()
   const [deleting, setDeleting] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+
+  const handleEdit = (e) => {
+    e.stopPropagation()
+    setEditOpen(true)
+  }
 
   const favorited = photo.is_favorited ?? isFavorited(photo.id)
 
@@ -109,18 +116,35 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true }) {
             </span>
           )}
           {isAdmin && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              title="Delete photo"
-              className="rounded-full border border-red-400/30 bg-dark/90 p-2 text-red-400/90 transition-colors hover:border-red-400 hover:bg-red-400/10 disabled:opacity-50"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleEdit}
+                title="Edit photo details"
+                className="rounded-full border border-gold/30 bg-dark/90 p-2 text-cream/80 transition-colors hover:border-gold hover:text-gold"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                title="Delete photo"
+                className="rounded-full border border-red-400/30 bg-dark/90 p-2 text-red-400/90 transition-colors hover:border-red-400 hover:bg-red-400/10 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
           )}
         </div>
       )}
+
+      <PhotoEditModal
+        photos={[photo]}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSuccess={() => setEditOpen(false)}
+      />
     </motion.article>
   )
 }

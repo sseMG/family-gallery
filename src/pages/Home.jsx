@@ -1,7 +1,10 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import Scene from '../components/three/Scene'
-import StatsBar from '../components/home/StatsBar'
+import { CalendarDays } from 'lucide-react'
+import { formatEventDate, useFamilyEvents } from '../hooks/useFamilyEvents'
+import heroBg from '../assets/hero-bg.jpeg'
+import heroVideo from '../assets/hero-bg.mp4'
 
 const containerVariants = {
   hidden: {},
@@ -19,29 +22,93 @@ const fadeUp = {
   },
 }
 
+function UpcomingMoments() {
+  const { events, loading, error, fetchEvents } = useFamilyEvents()
+
+  useEffect(() => {
+    fetchEvents({ upcomingOnly: true, limit: 3 })
+  }, [fetchEvents])
+
+  if (loading || error || events.length === 0) return null
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      animate="visible"
+      className="mt-10 w-full rounded-2xl border border-gold/20 bg-dark/35 p-4 text-left shadow-2xl shadow-black/30 backdrop-blur-md"
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gold/80">
+          Upcoming Moments
+        </p>
+        <Link to="/calendar" className="text-xs text-cream/45 transition-colors hover:text-gold">
+          View all
+        </Link>
+      </div>
+      <div className="space-y-2">
+        {events.map((event) => (
+          <Link
+            key={event.id}
+            to="/calendar"
+            className="flex items-center gap-3 rounded-lg border border-gold/10 bg-black/20 p-3 transition-colors hover:border-gold/30 hover:bg-gold/10"
+          >
+            <CalendarDays className="h-5 w-5 shrink-0 text-gold/70" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-cream">{event.title}</p>
+              <p className="text-xs text-cream/45">{formatEventDate(event.event_date)}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
 export default function Home() {
   return (
-    <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-dark sm:min-h-[calc(100vh-4.5rem)]">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-gold/10 via-dark/50 to-dark" />
-      <div className="pointer-events-none absolute -right-1/4 top-0 z-0 h-full w-1/2 bg-[radial-gradient(ellipse_at_center,rgba(201,169,110,0.08)_0%,transparent_65%)]" />
+    <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden sm:min-h-[calc(100vh-4.5rem)]">
 
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-90 lg:left-1/3">
-        <Scene />
-      </div>
+      {/* Layer 1 - Background photo */}
+      <div
+        style={{
+          backgroundImage: `url(${heroBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          position: 'absolute',
+          inset: 0,
+          zIndex: 1,
+        }}
+      />
 
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col items-center justify-center px-5 py-12 text-center sm:px-8 lg:items-start lg:py-16 lg:pl-10 lg:pr-6 lg:text-left">
-        <motion.div
-          className="relative z-10 flex max-w-2xl flex-col items-center lg:items-start"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.p
-            variants={fadeUp}
-            className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-gold sm:text-sm"
+      {/* Layer 2 - Dark overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 2,
+          background: 'rgba(0,0,0,0.5)',
+        }}
+      />
+
+      {/* Layer 4 - Content */}
+      <section
+        style={{ position: 'relative', zIndex: 4 }}
+        className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col items-center justify-center px-5 py-12 text-center sm:px-8 lg:py-16 lg:pl-10 lg:pr-6 lg:text-left"
+      >
+        <div className="flex w-full flex-col items-center gap-10 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
+          <motion.div
+            className="flex max-w-2xl flex-col items-center lg:items-start"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
           >
-            Welcome home
-          </motion.p>
+            <motion.p
+              variants={fadeUp}
+              className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-gold sm:text-sm"
+            >
+              Welcome home
+            </motion.p>
 
           <motion.h1
             variants={fadeUp}
@@ -66,16 +133,28 @@ export default function Home() {
               Explore the Gallery
             </Link>
           </motion.div>
-        </motion.div>
+          <UpcomingMoments />
+          </motion.div>
 
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="pointer-events-auto relative z-10 mt-14 w-full lg:mt-16"
-        >
-          <StatsBar />
-        </motion.div>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="w-full max-w-sm overflow-hidden rounded-2xl border border-gold/30 bg-dark/35 p-2 shadow-2xl shadow-black/40 backdrop-blur-md sm:max-w-md lg:max-w-lg"
+          >
+            <video
+              className="aspect-video w-full rounded-xl object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              poster={heroBg}
+            >
+              <source src={heroVideo} type="video/mp4" />
+            </video>
+          </motion.div>
+        </div>
       </section>
     </main>
   )
