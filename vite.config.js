@@ -12,7 +12,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons.svg', 'hero-bg.jpeg', 'hero-bg.mp4', 'icon.svg'],
+      includeAssets: ['favicon.svg', 'icons.svg', 'hero-bg.jpeg', 'hero-bg.mp4', 'icon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'Silva Family Gallery',
         short_name: 'Silva Family',
@@ -25,10 +25,16 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'icon.svg',
-            sizes: '192x192 512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
+            src: 'icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
           },
         ],
       },

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons</title>
+</head>
+<body>
+    <h1>Click to download PWA icons</h1>
+    <button onclick="downloadIcon(192)">Download 192x192 PNG</button>
+    <button onclick="downloadIcon(512)">Download 512x512 PNG</button>
+    
+    <script>
+        function downloadIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#0d0d0d';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Gold circle
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size * 0.35;
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(201, 169, 110, 0.2)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(201, 169, 110, 0.4)';
+            ctx.lineWidth = size * 0.02;
+            ctx.stroke();
+            
+            // Gold "S" text
+            ctx.fillStyle = '#c9a96e';
+            ctx.font = `bold ${size * 0.5}px Playfair Display, serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('S', centerX, centerY);
+            
+            // Download
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
