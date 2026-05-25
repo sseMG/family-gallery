@@ -50,6 +50,18 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
     }
   }, [selectMode, onSelectPhoto, photo.id, onPhotoClick, index])
 
+  const handleCheckboxClick = useCallback((e) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (!selectMode) {
+      // Enter select mode and select this photo
+      onEnterSelectMode?.(photo.id)
+    } else {
+      // Toggle selection
+      onSelectPhoto?.(photo.id)
+    }
+  }, [selectMode, onEnterSelectMode, onSelectPhoto, photo.id])
+
   const handleEdit = (e) => {
     e.stopPropagation()
     setEditOpen(true)
@@ -87,15 +99,14 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.4) }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
+      onPointerEnter={() => setIsHovered(true)}
+      onPointerLeave={() => {
         setIsHovered(false)
         endPress()
       }}
-      onMouseDown={startPress}
-      onMouseUp={endPress}
-      onTouchStart={startPress}
-      onTouchEnd={endPress}
+      onPointerDown={startPress}
+      onPointerUp={endPress}
+      onPointerCancel={endPress}
       className={`group relative mb-4 w-full break-inside-avoid overflow-hidden rounded-lg border transition-all duration-300 sm:mb-5 ${
         aspectClass[photo.aspect] || aspectClass.square
       } ${
@@ -104,21 +115,25 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
           : 'border-gold/10 bg-dark/50 hover:scale-[1.02] hover:border-gold/60 hover:shadow-[0_0_24px_rgba(201,169,110,0.25)]'
       }`}
     >
-      {/* Selection Checkbox */}
+      {/* Selection Checkbox - 44x44px touch target */}
       {(selectMode || isHovered) && (
-        <div
-          className={`absolute left-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${
-            isSelected
-              ? 'border-gold bg-gold text-dark'
-              : 'border-gold/50 bg-dark/80 text-cream/50 hover:border-gold'
-          }`}
-          onClick={(e) => {
-            e.stopPropagation()
-            onSelectPhoto?.(photo.id)
-          }}
+        <button
+          type="button"
+          className="absolute left-0 top-0 z-30 flex h-11 w-11 cursor-pointer items-center justify-center p-2.5"
+          onClick={handleCheckboxClick}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label={isSelected ? 'Deselect photo' : 'Select photo'}
         >
-          {isSelected && <Check className="h-4 w-4" />}
-        </div>
+          <div
+            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${
+              isSelected
+                ? 'border-gold bg-gold text-dark'
+                : 'border-gold/50 bg-dark/80 text-cream/50 hover:border-gold'
+            }`}
+          >
+            {isSelected && <Check className="h-4 w-4" />}
+          </div>
+        </button>
       )}
 
       <button
