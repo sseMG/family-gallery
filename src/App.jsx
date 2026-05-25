@@ -106,7 +106,10 @@ function AppRoutes() {
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(() => {
-    return window.matchMedia('(display-mode: standalone)').matches
+    const seen = sessionStorage.getItem('splash_seen')
+    if (seen) return false
+    sessionStorage.setItem('splash_seen', 'true')
+    return true
   })
 
   return (
