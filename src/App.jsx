@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { useAuthListener } from './hooks/useAuth'
 import Navbar from './components/layout/Navbar'
 import PageTransition from './components/layout/PageTransition'
+import SplashScreen from './components/ui/SplashScreen'
 import Home from './pages/Home'
 import Gallery from './pages/Gallery'
 import Album from './pages/Album'
@@ -103,9 +105,16 @@ function AppRoutes() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(() => {
+    return window.matchMedia('(display-mode: standalone)').matches
+  })
+
   return (
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <>
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </>
   )
 }
