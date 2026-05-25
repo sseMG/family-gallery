@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, Trash2, MapPin, Calendar, Pencil } from 'lucide-react'
+import { Heart, Trash2, MapPin, Calendar, Pencil, Check } from 'lucide-react'
 import { getPhotoDisplayUrl } from '../../lib/photos'
 import { useAuth } from '../../hooks/useAuth'
 import { useFavorites } from '../../hooks/useFavorites'
@@ -13,13 +13,42 @@ const aspectClass = {
   square: 'aspect-square',
 }
 
-function PhotoCard({ photo, index, onPhotoClick, showActions = true }) {
+function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode = false, isSelected = false, onSelectPhoto, onEnterSelectMode }) {
   const { user, isAdmin } = useAuth()
   const { toggleFavorite, isFavorited } = useFavorites()
   const { deletePhoto } = usePhotos()
   const [deleting, setDeleting] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+
+  // Long press detection
+  const pressTimer = useRef(null)
+  const isLongPress = useRef(false)
+
+  const startPress = useCallback(() => {
+    isLongPress.current = false
+    pressTimer.current = setTimeout(() => {
+      isLongPress.current = true
+      onEnterSelectMode?.(photo.id)
+    }, 500)
+  }, [photo.id, onEnterSelectMode])
+
+  const endPress = useCallback(() => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }, [])
+
+  const handleClick = useCallback(() => {
+    if (isLongPress.current) return
+    if (selectMode) {
+      onSelectPhoto?.(photo.id)
+    } else {
+      onPhotoClick?.(index)
+    }
+  }, [selectMode, onSelectPhoto, photo.id, onPhotoClick, index])
 
   const handleEdit = (e) => {
     e.stopPropagation()
@@ -58,11 +87,43 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.4) }}
-      className={`group relative mb-4 w-full break-inside-avoid overflow-hidden rounded-lg border border-gold/10 bg-dark/50 transition-all duration-300 hover:scale-[1.02] hover:border-gold/60 hover:shadow-[0_0_24px_rgba(201,169,110,0.25)] sm:mb-5 ${aspectClass[photo.aspect] || aspectClass.square}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false)
+        endPress()
+      }}
+      onMouseDown={startPress}
+      onMouseUp={endPress}
+      onTouchStart={startPress}
+      onTouchEnd={endPress}
+      className={`group relative mb-4 w-full break-inside-avoid overflow-hidden rounded-lg border transition-all duration-300 sm:mb-5 ${
+        aspectClass[photo.aspect] || aspectClass.square
+      } ${
+        isSelected
+          ? 'border-gold ring-2 ring-gold shadow-[0_0_24px_rgba(201,169,110,0.4)]'
+          : 'border-gold/10 bg-dark/50 hover:scale-[1.02] hover:border-gold/60 hover:shadow-[0_0_24px_rgba(201,169,110,0.25)]'
+      }`}
     >
+      {/* Selection Checkbox */}
+      {(selectMode || isHovered) && (
+        <div
+          className={`absolute left-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${
+            isSelected
+              ? 'border-gold bg-gold text-dark'
+              : 'border-gold/50 bg-dark/80 text-cream/50 hover:border-gold'
+          }`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelectPhoto?.(photo.id)
+          }}
+        >
+          {isSelected && <Check className="h-4 w-4" />}
+        </div>
+      )}
+
       <button
         type="button"
-        onClick={() => onPhotoClick(index)}
+        onClick={handleClick}
         className="block h-full w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
       >
         <img
@@ -149,7 +210,7 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true }) {
   )
 }
 
-export default function PhotoGrid({ photos, onPhotoClick, showActions = true }) {
+export default function PhotoGrid({ photos, onPhotoClick, showActions = true, selectMode = false, selectedIds = new Set(), onSelectPhoto, onEnterSelectMode }) {
   if (!photos.length) {
     return (
       <p className="py-16 text-center text-cream/50">
@@ -167,6 +228,10 @@ export default function PhotoGrid({ photos, onPhotoClick, showActions = true }) 
           index={index}
           onPhotoClick={onPhotoClick}
           showActions={showActions}
+          selectMode={selectMode}
+          isSelected={selectedIds.has(photo.id)}
+          onSelectPhoto={onSelectPhoto}
+          onEnterSelectMode={onEnterSelectMode}
         />
       ))}
     </div>
