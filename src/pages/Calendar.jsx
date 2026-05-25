@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, ExternalLink, Loader2, MapPin, Plus, Trash2 } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, ExternalLink, Loader2, MapPin, Plus, Trash2, Info } from 'lucide-react'
 import { EVENT_TYPES, formatEventDate, getEventMonthDay, useFamilyEvents } from '../hooks/useFamilyEvents'
 import { useAuth } from '../hooks/useAuth'
+import { usePhilippineHolidays } from '../hooks/usePhilippineHolidays'
 
 const inputClass =
   'w-full rounded-sm border border-gold/20 bg-dark px-4 py-3 text-cream placeholder:text-cream/30 outline-none transition-colors focus:border-gold focus:ring-1 focus:ring-gold/30'
@@ -134,9 +135,90 @@ function EventCard({ event, isAdmin, onDelete }) {
   )
 }
 
+function HolidayCard({ holiday }) {
+  const { month, day } = getEventMonthDay(holiday.date)
+  const isUniversal = holiday.source === 'universal'
+  const isPh = holiday.source === 'ph'
+
+  const phColors = {
+    border: 'border-red-400/20',
+    bg: 'bg-red-400/5',
+    dateBorder: 'border-red-400/30',
+    dateBg: 'bg-red-400/10',
+    dateText: 'text-red-400',
+    label: 'text-red-400/80',
+    title: 'text-red-400',
+    iconBorder: 'border-red-400/20',
+    iconBg: 'bg-red-400/10',
+    iconText: 'text-red-400/70',
+    calendarIcon: 'text-red-400/60',
+  }
+
+  const universalColors = {
+    border: 'border-cream/20',
+    bg: 'bg-cream/5',
+    dateBorder: 'border-cream/30',
+    dateBg: 'bg-cream/10',
+    dateText: 'text-cream',
+    label: 'text-cream/80',
+    title: 'text-cream',
+    iconBorder: 'border-cream/20',
+    iconBg: 'bg-cream/10',
+    iconText: 'text-cream/70',
+    calendarIcon: 'text-cream/60',
+  }
+
+  const colors = isUniversal ? universalColors : phColors
+  const label = isUniversal ? '🌍 Universal Holiday' : '🇵🇭 National Holiday'
+
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`overflow-hidden rounded-xl border ${colors.border} ${colors.bg} shadow-xl shadow-black/20 backdrop-blur-sm`}
+    >
+      <div className="flex gap-4 p-4 sm:p-5">
+        <div className={`flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-lg border ${colors.dateBorder} ${colors.dateBg} ${colors.dateText}`}>
+          <span className="text-xs uppercase tracking-[0.22em]">{month}</span>
+          <span className="font-serif text-3xl font-bold leading-none">{day}</span>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <p className={`text-xs uppercase tracking-[0.22em] ${colors.label}`}>{label}</p>
+              <h2 className={`mt-1 font-serif text-xl font-semibold ${colors.title} sm:text-2xl`}>
+                {holiday.name}
+              </h2>
+            </div>
+            <div className={`rounded-full border ${colors.iconBorder} ${colors.iconBg} p-2`}>
+              <Info className={`h-4 w-4 ${colors.iconText}`} />
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-cream/55">
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays className={`h-4 w-4 ${colors.calendarIcon}`} />
+              {formatEventDate(holiday.date)}
+            </span>
+          </div>
+
+          {holiday.localName && holiday.localName !== holiday.name && (
+            <p className="mt-3 text-sm leading-relaxed text-cream/65">
+              <span className="text-cream/40">Local name:</span> {holiday.localName}
+            </p>
+          )}
+        </div>
+      </div>
+    </motion.article>
+  )
+}
+
 export default function Calendar() {
   const { isAdmin } = useAuth()
   const { events, loading, error, fetchEvents, createEvent, deleteEvent } = useFamilyEvents()
+  const { holidays, fetchHolidays, getHolidayForDate, getHolidaysForYear } = usePhilippineHolidays()
   const [formOpen, setFormOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
@@ -147,6 +229,11 @@ export default function Calendar() {
   useEffect(() => {
     fetchEvents({ upcomingOnly: true })
   }, [fetchEvents])
+
+  useEffect(() => {
+    const year = viewMonth.getFullYear()
+    fetchHolidays(year)
+  }, [viewMonth, fetchHolidays])
 
   const eventsByDate = useMemo(() => {
     return events.reduce((map, event) => {
@@ -159,6 +246,23 @@ export default function Calendar() {
 
   const monthDays = useMemo(() => buildMonthDays(viewMonth), [viewMonth])
   const selectedEvents = eventsByDate.get(selectedDate) ?? []
+  const selectedHoliday = getHolidayForDate(selectedDate)
+
+  const upcomingItems = useMemo(() => {
+    const yearHolidays = getHolidaysForYear(new Date().getFullYear())
+    const allItems = [
+      ...events.map((e) => ({ ...e, type: 'event' })),
+      ...yearHolidays.map((h) => ({ ...h, type: 'holiday' })),
+    ]
+    return allItems
+      .filter((item) => new Date(item.date || item.event_date) >= new Date(todayKey))
+      .sort((a, b) => {
+        const dateA = a.date || a.event_date
+        const dateB = b.date || b.event_date
+        return dateA.localeCompare(dateB)
+      })
+      .slice(0, 6)
+  }, [events, getHolidaysForYear])
 
   const changeMonth = (offset) => {
     setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))
@@ -378,23 +482,35 @@ export default function Calendar() {
               <div className="grid grid-cols-7 gap-1">
                 {monthDays.map((day) => {
                   const dayEvents = eventsByDate.get(day.key) ?? []
+                  const holiday = getHolidayForDate(day.key)
                   const selected = selectedDate === day.key
                   const isToday = todayKey === day.key
+                  const isUniversalHoliday = holiday?.source === 'universal'
+                  const isPhHoliday = holiday?.source === 'ph'
 
                   return (
                     <button
                       key={day.key}
                       type="button"
                       onClick={() => setSelectedDate(day.key)}
-                      className={`min-h-20 rounded-lg border p-2 text-left transition-all ${
+                      className={`min-h-20 rounded-lg border p-2 text-left transition-all relative ${
                         selected
                           ? 'border-gold bg-gold/15 shadow-lg shadow-gold/5'
+                          : holiday
+                          ? 'border-gold/20 bg-gold/5 hover:border-gold/30 hover:bg-gold/10'
                           : 'border-gold/10 bg-dark/40 hover:border-gold/30 hover:bg-gold/10'
                       } ${day.inMonth ? 'opacity-100' : 'opacity-35'}`}
+                      title={holiday ? `${isUniversalHoliday ? '�' : '��🇭'} ${holiday.name}` : undefined}
                     >
                       <span className={`text-sm ${isToday ? 'text-gold' : 'text-cream/70'}`}>
                         {day.date.getDate()}
                       </span>
+                      {isPhHoliday && (
+                        <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.5)]" />
+                      )}
+                      {isUniversalHoliday && (
+                        <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-cream/70 shadow-[0_0_8px_rgba(245,240,232,0.5)]" />
+                      )}
                       <div className="mt-2 space-y-1">
                         {dayEvents.slice(0, 2).map((event) => (
                           <div key={event.id} className="truncate rounded bg-gold/15 px-1.5 py-0.5 text-[10px] text-gold">
@@ -421,13 +537,15 @@ export default function Calendar() {
                 </h2>
               </div>
 
+              {selectedHoliday && <HolidayCard holiday={selectedHoliday} />}
+
               {selectedEvents.length > 0 ? (
                 <div className="space-y-4">
                   {selectedEvents.map((event) => (
                     <EventCard key={event.id} event={event} isAdmin={isAdmin} onDelete={handleDelete} />
                   ))}
                 </div>
-              ) : (
+              ) : !selectedHoliday && (
                 <div className="rounded-xl border border-gold/15 bg-black/20 p-6 text-center">
                   <CalendarDays className="mx-auto mb-4 h-9 w-9 text-gold/45" />
                   <h3 className="font-serif text-xl text-gold">No plans on this day</h3>
@@ -439,7 +557,7 @@ export default function Calendar() {
 
               <div className="pt-2">
                 <h2 className="mb-4 font-serif text-2xl text-gold">Upcoming</h2>
-                {events.length === 0 ? (
+                {upcomingItems.length === 0 ? (
                   <div className="rounded-xl border border-gold/15 bg-black/20 p-6 text-center">
                     <p className="text-sm text-cream/50">
                       Add birthdays, reunions, trips, and family plans here.
@@ -447,9 +565,13 @@ export default function Calendar() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {events.slice(0, 4).map((event) => (
-                      <EventCard key={event.id} event={event} isAdmin={isAdmin} onDelete={handleDelete} />
-                    ))}
+                    {upcomingItems.map((item) =>
+                      item.type === 'holiday' ? (
+                        <HolidayCard key={item.id} holiday={item} />
+                      ) : (
+                        <EventCard key={item.id} event={item} isAdmin={isAdmin} onDelete={handleDelete} />
+                      )
+                    )}
                   </div>
                 )}
               </div>

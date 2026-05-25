@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { CalendarDays } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { CalendarDays, Download, X } from 'lucide-react'
 import { formatEventDate, useFamilyEvents } from '../hooks/useFamilyEvents'
 import { RecentMemories, FeaturedAlbums, OnThisDay, FamilyMembersPreview } from '../components/home/HomeSections'
 import heroBg from '../assets/hero-bg.jpeg'
@@ -66,9 +66,91 @@ function UpcomingMoments() {
   )
 }
 
+function PWAInstallBanner() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [showBanner, setShowBanner] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setShowBanner(true)
+    }
+
+    window.addEventListener('beforeinstallprompt', handler)
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowBanner(false)
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return
+
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null)
+      setShowBanner(false)
+    }
+  }
+
+  const handleDismiss = () => {
+    setDismissed(true)
+    setShowBanner(false)
+  }
+
+  if (!showBanner || dismissed) return null
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 100, opacity: 0 }}
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-gold/30 bg-dark/95 p-4 backdrop-blur-md md:hidden"
+      >
+        <div className="mx-auto flex max-w-md items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-gold/30 bg-gold/15 font-serif text-2xl font-bold text-gold">
+              S
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-cream">Silva Family Gallery</p>
+              <p className="text-xs text-cream/60">Install for offline access</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleInstall}
+              className="inline-flex items-center gap-1.5 rounded border border-gold/40 bg-gold/15 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gold transition-colors hover:bg-gold/25"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Install
+            </button>
+            <button
+              onClick={handleDismiss}
+              className="rounded p-2 text-cream/60 transition-colors hover:text-gold"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
 export default function Home() {
   return (
     <>
+    <PWAInstallBanner />
     <main className="relative min-h-[calc(100vh-4rem)] overflow-hidden sm:min-h-[calc(100vh-4.5rem)]">
 
       {/* Layer 1 - Background photo */}
