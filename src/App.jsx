@@ -26,78 +26,15 @@ function AppRoutes() {
       <UploadModalHost />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          <Route
-            path="/"
-            element={
-              <PageTransition>
-                <Home />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/gallery"
-            element={
-              <PageTransition>
-                <Gallery />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/albums"
-            element={
-              <PageTransition>
-                <Album />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/album/:id"
-            element={
-              <PageTransition>
-                <Album />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/favorites"
-            element={
-              <PageTransition>
-                <Favorites />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/timeline"
-            element={
-              <PageTransition>
-                <Timeline />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/calendar"
-            element={
-              <PageTransition>
-                <Calendar />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/members"
-            element={
-              <PageTransition>
-                <FamilyMembers />
-              </PageTransition>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <PageTransition>
-                <Login />
-              </PageTransition>
-            }
-          />
+          <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+          <Route path="/gallery" element={<PageTransition><Gallery /></PageTransition>} />
+          <Route path="/albums" element={<PageTransition><Album /></PageTransition>} />
+          <Route path="/album/:id" element={<PageTransition><Album /></PageTransition>} />
+          <Route path="/favorites" element={<PageTransition><Favorites /></PageTransition>} />
+          <Route path="/timeline" element={<PageTransition><Timeline /></PageTransition>} />
+          <Route path="/calendar" element={<PageTransition><Calendar /></PageTransition>} />
+          <Route path="/members" element={<PageTransition><FamilyMembers /></PageTransition>} />
+          <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
         </Routes>
       </AnimatePresence>
     </div>
@@ -105,12 +42,7 @@ function AppRoutes() {
 }
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(() => {
-    const seen = sessionStorage.getItem('splash_seen')
-    if (seen) return false
-    sessionStorage.setItem('splash_seen', 'true')
-    return true
-  })
+  const [showSplash, setShowSplash] = useState(true)
 
   return (
     <>
