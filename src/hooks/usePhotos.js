@@ -35,8 +35,10 @@ export function usePhotos() {
       const favoriteIds = await loadFavoriteIds(userId)
       setFavoritePhotoIds(favoriteIds)
       const normalized = mapPhotos(rows, favoriteIds)
-      useStore.getState().setPhotos(normalized)
-      return normalized
+      // Sort by created_at descending (newest first)
+      const sorted = normalized.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      useStore.getState().setPhotos(sorted)
+      return sorted
     },
     [setFavoritePhotoIds],
   )
@@ -200,7 +202,10 @@ export function usePhotos() {
 
       const favoriteIds = await loadFavoriteIds(user.id)
       const normalized = normalizePhoto(data, { favoriteIds })
-      useStore.getState().setPhotos([normalized, ...useStore.getState().photos])
+      // Insert in sorted position by created_at (newest first)
+      const currentPhotos = useStore.getState().photos
+      const newPhotos = [normalized, ...currentPhotos].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      useStore.getState().setPhotos(newPhotos)
       return normalized
     },
     [user, updateAlbumCoverIfNeeded],
@@ -236,9 +241,10 @@ export function usePhotos() {
         favorites: [{ count: existingPhoto?.favorite_count ?? 0 }],
       }
       const normalized = normalizePhoto(rowWithFavorites, { favoriteIds })
-      useStore.getState().setPhotos(
-        useStore.getState().photos.map((p) => (p.id === id ? normalized : p))
-      )
+      // Update and maintain sorted order by created_at
+      const updatedPhotos = useStore.getState().photos.map((p) => (p.id === id ? normalized : p))
+      const sortedPhotos = updatedPhotos.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      useStore.getState().setPhotos(sortedPhotos)
 
       return normalized
     },

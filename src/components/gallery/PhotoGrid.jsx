@@ -107,7 +107,7 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
       onPointerDown={startPress}
       onPointerUp={endPress}
       onPointerCancel={endPress}
-      className={`group relative mb-4 w-full break-inside-avoid overflow-hidden rounded-lg border transition-all duration-300 sm:mb-5 ${
+      className={`group relative w-full overflow-hidden rounded-lg border transition-all duration-300 ${
         aspectClass[photo.aspect] || aspectClass.square
       } ${
         isSelected
@@ -235,7 +235,7 @@ export default function PhotoGrid({ photos, onPhotoClick, showActions = true, se
   }
 
   return (
-    <div className="columns-2 gap-4 sm:columns-3 sm:gap-5 lg:columns-4 lg:gap-6">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
       {photos.map((photo, index) => (
         <PhotoCard
           key={photo.id}
