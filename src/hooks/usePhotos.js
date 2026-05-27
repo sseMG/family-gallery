@@ -70,9 +70,21 @@ export function usePhotos() {
       }
     }
 
+    // Fetch comment counts
+    let commentCounts = {}
+    const { data: commentData } = await supabase
+      .from('photo_comments')
+      .select('photo_id')
+    if (commentData) {
+      for (const comment of commentData) {
+        commentCounts[comment.photo_id] = (commentCounts[comment.photo_id] || 0) + 1
+      }
+    }
+
     const rows = (data ?? []).map(row => ({
       ...row,
       favorite_count: favCounts[row.id] || 0,
+      comment_count: commentCounts[row.id] || 0,
     }))
 
     setLoading(false)
@@ -109,9 +121,21 @@ export function usePhotos() {
         }
       }
 
+      // Fetch comment counts
+      let commentCounts = {}
+      const { data: commentData } = await supabase
+        .from('photo_comments')
+        .select('photo_id')
+      if (commentData) {
+        for (const comment of commentData) {
+          commentCounts[comment.photo_id] = (commentCounts[comment.photo_id] || 0) + 1
+        }
+      }
+
       const rows = (data ?? []).map(row => ({
         ...row,
         favorite_count: favCounts[row.id] || 0,
+        comment_count: commentCounts[row.id] || 0,
       }))
 
       setLoading(false)

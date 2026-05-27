@@ -6,6 +6,7 @@ export const useStore = create((set) => ({
   selectedAlbum: null,
   uploadModalOpen: false,
   favoritePhotoIds: new Set(),
+  comments: {}, // { [photoId]: Comment[] }
 
   setUser: (user) => set({ user }),
   setPhotos: (photos) => set({ photos }),
@@ -20,4 +21,33 @@ export const useStore = create((set) => ({
       else next.delete(photoId)
       return { favoritePhotoIds: next }
     }),
+  setComments: (photoId, comments) =>
+    set((state) => ({
+      comments: { ...state.comments, [photoId]: comments },
+    })),
+  addComment: (photoId, comment) =>
+    set((state) => ({
+      comments: {
+        ...state.comments,
+        [photoId]: [comment, ...(state.comments[photoId] || [])],
+      },
+    })),
+  updateComment: (photoId, commentId, updates) =>
+    set((state) => ({
+      comments: {
+        ...state.comments,
+        [photoId]: (state.comments[photoId] || []).map((c) =>
+          c.id === commentId ? { ...c, ...updates } : c
+        ),
+      },
+    })),
+  removeComment: (photoId, commentId) =>
+    set((state) => ({
+      comments: {
+        ...state.comments,
+        [photoId]: (state.comments[photoId] || []).filter(
+          (c) => c.id !== commentId
+        ),
+      },
+    })),
 }))

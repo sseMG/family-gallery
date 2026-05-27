@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, Trash2, MapPin, Calendar, Pencil, Check, Download } from 'lucide-react'
+import { Heart, Trash2, MapPin, Calendar, Pencil, Check, Download, MessageCircle } from 'lucide-react'
 import { getPhotoDisplayUrl } from '../../lib/photos'
 import { useAuth } from '../../hooks/useAuth'
 import { useFavorites } from '../../hooks/useFavorites'
@@ -216,6 +216,12 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
           {(photo.favorite_count ?? 0) > 0 && (
             <span className="flex items-center rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold">
               {photo.favorite_count}
+            </span>
+          )}
+          {(photo.comment_count ?? 0) > 0 && (
+            <span className="flex items-center gap-1 rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold">
+              <MessageCircle className="h-3 w-3" />
+              {photo.comment_count}
             </span>
           )}
           {isAdmin && (
