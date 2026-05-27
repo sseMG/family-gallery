@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, Trash2, MapPin, Calendar, Pencil, Check } from 'lucide-react'
+import { Heart, Trash2, MapPin, Calendar, Pencil, Check, Download } from 'lucide-react'
 import { getPhotoDisplayUrl } from '../../lib/photos'
 import { useAuth } from '../../hooks/useAuth'
 import { useFavorites } from '../../hooks/useFavorites'
@@ -91,6 +91,25 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
     } catch (err) {
       alert(err.message)
       setDeleting(false)
+    }
+  }
+
+  const handleDownload = async (e) => {
+    e.stopPropagation()
+    try {
+      const response = await fetch(photo.url)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = photo.caption ? `${photo.caption.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${photo.id.slice(0, 8)}.jpg` : `photo_${photo.id.slice(0, 8)}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Download failed:', err)
+      alert('Download failed. Please try again.')
     }
   }
 
@@ -185,6 +204,14 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
             } ${!user ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             <Heart className={`h-4 w-4 ${favorited ? 'fill-current' : ''}`} />
+          </button>
+          <button
+            type="button"
+            onClick={handleDownload}
+            title="Download original"
+            className="rounded-full border border-gold/30 bg-dark/90 p-2 text-cream/80 transition-colors hover:border-gold hover:text-gold"
+          >
+            <Download className="h-4 w-4" />
           </button>
           {(photo.favorite_count ?? 0) > 0 && (
             <span className="flex items-center rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold">

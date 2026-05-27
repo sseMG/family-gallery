@@ -32,13 +32,15 @@ function AlbumsIndex() {
   }
 
   async function handleDelete(album) {
-    if (!window.confirm(`Delete "${album.title}"? Photos will be unlinked but not deleted.`)) return
-    try {
-      await deleteAlbum(album.id)
-    } catch (err) {
-      alert(err.message)
-    }
+  if (!window.confirm(`Delete "${album.title}"? Photos will be unlinked but not deleted.`)) return
+  try {
+    await deleteAlbum(album.id)
+    await fetchAlbums()
+  } catch (err) {
+    alert(err.message)
+    await fetchAlbums()
   }
+}
 
   function openCreate() {
     setEditAlbum(null)

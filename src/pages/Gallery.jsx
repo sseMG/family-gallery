@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, X, FolderOpen, Trash2 } from 'lucide-react'
+import { Upload, X, FolderOpen, Trash2, Download, Search, Heart } from 'lucide-react'
+import JSZip from 'jszip'
 import PhotoGrid from '../components/gallery/PhotoGrid'
 import Lightbox from '../components/gallery/Lightbox'
 import { PhotoGridSkeleton } from '../components/ui/Skeleton'
@@ -23,6 +24,10 @@ export default function Gallery() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [toast, setToast] = useState(null)
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
 
   const enterSelectMode = useCallback((photoId) => {
     setSelectMode(true)
@@ -70,6 +75,48 @@ export default function Gallery() {
     exitSelectMode()
   }, [selectedIds, deletePhoto, exitSelectMode])
 
+  const handleBulkDownload = useCallback(async () => {
+    if (selectedIds.size === 0) return
+
+    setToast({ message: 'Preparing ZIP download...', type: 'success' })
+
+    try {
+      const zip = new JSZip()
+      const selectedPhotos = photos.filter((p) => selectedIds.has(p.id))
+
+      await Promise.all(
+        selectedPhotos.map(async (photo, index) => {
+          try {
+            const response = await fetch(photo.url)
+            const blob = await response.blob()
+            const filename = photo.caption
+              ? `${photo.caption.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${photo.id.slice(0, 8)}.jpg`
+              : `photo_${photo.id.slice(0, 8)}.jpg`
+            zip.file(filename, blob)
+          } catch (err) {
+            console.error(`Failed to download photo ${photo.id}:`, err)
+          }
+        }),
+      )
+
+      const content = await zip.generateAsync({ type: 'blob' })
+      const url = window.URL.createObjectURL(content)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `family_photos_${new Date().toISOString().split('T')[0]}.zip`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      setToast({ message: `${selectedPhotos.length} photos downloaded`, type: 'success' })
+      exitSelectMode()
+    } catch (err) {
+      console.error('Bulk download failed:', err)
+      setToast({ message: 'Download failed. Please try again.', type: 'error' })
+    }
+  }, [selectedIds, photos, exitSelectMode])
+
   const handleMoveSuccess = useCallback((count, albumName) => {
     setToast({ message: `${count} photos moved to ${albumName}`, type: 'success' })
     exitSelectMode()
@@ -81,6 +128,25 @@ export default function Gallery() {
     if (fromData.length > 1) return fromData
     return [2020, 2021, 2022, 2023, 2024, 'All']
   }, [photos])
+
+  const filteredPhotos = useMemo(() => {
+    let result = photos
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(
+        (p) =>
+          (p.caption?.toLowerCase().includes(query)) ||
+          (p.location?.toLowerCase().includes(query))
+      )
+    }
+
+    if (showFavoritesOnly) {
+      result = result.filter((p) => p.is_favorited)
+    }
+
+    return result
+  }, [photos, searchQuery, showFavoritesOnly])
 
   useEffect(() => {
     if (year === 'All') fetchPhotos()
@@ -141,35 +207,85 @@ export default function Gallery() {
         )}
 
         {!selectMode && (
-          <div className="mb-8 flex flex-wrap gap-2 sm:mb-10 sm:gap-3">
-            {yearFilters.map((y) => {
-              const active = year === y
-              return (
+          <div className="mb-8 space-y-4 sm:mb-10">
+            {/* Search and Filter Bar */}
+            <div className="flex flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[200px] max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cream/40" />
+                <input
+                  type="text"
+                  placeholder="Search by caption or location..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded border border-gold/20 bg-dark/50 py-2 pl-10 pr-4 text-sm text-cream placeholder:text-cream/40 outline-none transition-colors focus:border-gold"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className={`flex items-center gap-2 rounded border px-4 py-2 text-sm font-medium tracking-wide transition-all ${
+                  showFavoritesOnly
+                    ? 'border-gold bg-gold/15 text-gold'
+                    : 'border-gold/20 text-cream/60 hover:border-gold/40 hover:text-gold'
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                Favorites Only
+              </button>
+              {(searchQuery || showFavoritesOnly) && (
                 <button
-                  key={y}
                   type="button"
                   onClick={() => {
-                    setYear(y)
-                    setLightboxIndex(null)
+                    setSearchQuery('')
+                    setShowFavoritesOnly(false)
                   }}
-                  className={`rounded border px-4 py-2 text-sm font-medium tracking-wide transition-all duration-300 ${
-                    active
-                      ? 'border-gold bg-gold/15 text-gold shadow-[0_0_16px_rgba(201,169,110,0.2)]'
-                      : 'border-gold/20 text-cream/60 hover:border-gold/40 hover:text-gold'
-                  }`}
+                  className="flex items-center gap-2 rounded border border-gold/20 px-4 py-2 text-sm text-cream/60 transition-colors hover:border-gold/40 hover:text-gold"
                 >
-                  {y}
+                  <X className="h-4 w-4" />
+                  Clear
                 </button>
-              )
-            })}
+              )}
+            </div>
+
+            {/* Year Filters */}
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              {yearFilters.map((y) => {
+                const active = year === y
+                return (
+                  <button
+                    key={y}
+                    type="button"
+                    onClick={() => {
+                      setYear(y)
+                      setLightboxIndex(null)
+                    }}
+                    className={`rounded border px-4 py-2 text-sm font-medium tracking-wide transition-all duration-300 ${
+                      active
+                        ? 'border-gold bg-gold/15 text-gold shadow-[0_0_16px_rgba(201,169,110,0.2)]'
+                        : 'border-gold/20 text-cream/60 hover:border-gold/40 hover:text-gold'
+                    }`}
+                  >
+                    {y}
+                  </button>
+                )
+              })}
+            </div>
           </div>
         )}
 
         {loading ? (
           <PhotoGridSkeleton />
+        ) : filteredPhotos.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-cream/50">
+              {searchQuery || showFavoritesOnly
+                ? 'No photos match your search/filter.'
+                : 'No photos found.'}
+            </p>
+          </div>
         ) : (
           <PhotoGrid
-            photos={photos}
+            photos={filteredPhotos}
             onPhotoClick={(index) => !selectMode && setLightboxIndex(index)}
             selectMode={selectMode}
             selectedIds={selectedIds}
@@ -201,11 +317,19 @@ export default function Gallery() {
           >
             <button
               type="button"
+              onClick={handleBulkDownload}
+              className="flex items-center gap-2 rounded-full bg-gold/15 px-4 py-2 text-sm font-medium text-gold transition-colors hover:bg-gold/25"
+            >
+              <Download className="h-4 w-4" />
+              Download ({selectedIds.size})
+            </button>
+            <button
+              type="button"
               onClick={() => setShowMoveModal(true)}
               className="flex items-center gap-2 rounded-full bg-gold/15 px-4 py-2 text-sm font-medium text-gold transition-colors hover:bg-gold/25"
             >
               <FolderOpen className="h-4 w-4" />
-              Move to Album
+              Move
             </button>
             {isAdmin && (
               <button
