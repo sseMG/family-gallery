@@ -29,28 +29,40 @@ export function usePhotoComments() {
 
       const { data, error: fetchError } = await supabase
         .from('photo_comments')
-        .select(
-          `
-          *,
-          profiles:user_id (display_name, avatar_url)
-        `
-        )
+        .select('*')
         .eq('photo_id', photoId)
         .order('created_at', { ascending: true })
 
       setLoading(false)
 
       if (fetchError) {
+        console.error('[usePhotoComments] fetchComments error:', fetchError)
         setError(fetchError.message)
         return { comments: [], error: fetchError }
       }
 
-      // Transform data to flatten profile info
-      const transformed = (data || []).map((comment) => ({
-        ...comment,
-        user_name: comment.profiles?.display_name || 'Family Member',
-        user_avatar: comment.profiles?.avatar_url || null,
-      }))
+      // Fetch user profiles separately for display names
+      const userIds = [...new Set((data || []).map(c => c.user_id))]
+      let profilesMap = {}
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .in('id', userIds)
+        if (profilesData) {
+          profilesMap = Object.fromEntries(profilesData.map(p => [p.id, p]))
+        }
+      }
+
+      // Transform data with profile info
+      const transformed = (data || []).map((comment) => {
+        const profile = profilesMap[comment.user_id]
+        return {
+          ...comment,
+          user_name: profile?.display_name || 'Family Member',
+          user_avatar: profile?.avatar_url || null,
+        }
+      })
 
       setComments(photoId, transformed)
       return { comments: transformed, error: null }
@@ -185,23 +197,25 @@ export function usePhotoComments() {
             filter: `photo_id=eq.${photoId}`,
           },
           async (payload) => {
-            // Fetch full comment with profile info
-            const { data } = await supabase
+            // Fetch the new comment
+            const { data: commentData } = await supabase
               .from('photo_comments')
-              .select(
-                `
-                *,
-                profiles:user_id (display_name, avatar_url)
-              `
-              )
+              .select('*')
               .eq('id', payload.new.id)
               .single()
 
-            if (data) {
+            if (commentData) {
+              // Fetch user profile separately
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('display_name, avatar_url')
+                .eq('id', commentData.user_id)
+                .single()
+
               const transformed = {
-                ...data,
-                user_name: data.profiles?.display_name || 'Family Member',
-                user_avatar: data.profiles?.avatar_url || null,
+                ...commentData,
+                user_name: profileData?.display_name || 'Family Member',
+                user_avatar: profileData?.avatar_url || null,
               }
               addComment(photoId, transformed)
               onNewComment?.(transformed)
