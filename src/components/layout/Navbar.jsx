@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Menu, X, Upload } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { useStore } from '../../store'
@@ -35,8 +35,14 @@ function UserBadge({ user }) {
 
 export default function Navbar() {
   const { user, isAdmin, signOut } = useAuth()
+  const navigate = useNavigate()
   const setUploadModalOpen = useStore((s) => s.setUploadModalOpen)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/')
+  }
 
   const openUpload = () => {
     setMenuOpen(false)
@@ -89,7 +95,7 @@ export default function Navbar() {
               <UserBadge user={user} />
               <button
                 type="button"
-                onClick={() => signOut()}
+                onClick={handleSignOut}
                 className="text-sm text-cream/60 transition-colors hover:text-gold"
               >
                 Sign out
@@ -153,9 +159,9 @@ export default function Navbar() {
                 <UserBadge user={user} />
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setMenuOpen(false)
-                    signOut()
+                    await handleSignOut()
                   }}
                   className="text-sm text-cream/60 hover:text-gold"
                 >

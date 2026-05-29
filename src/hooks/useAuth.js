@@ -5,8 +5,16 @@ import { useStore } from '../store'
 async function upsertProfile(user) {
   if (!supabase || !user) return
   try {
-    await supabase.from('profiles').upsert(
-      {
+    // First check if profile already exists
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    // Only insert if profile doesn't exist - don't overwrite existing names
+    if (!existing) {
+      await supabase.from('profiles').insert({
         id: user.id,
         full_name:
           user.user_metadata?.full_name ||
@@ -14,9 +22,8 @@ async function upsertProfile(user) {
           user.email?.split('@')[0] ||
           'Family Member',
         avatar_url: user.user_metadata?.avatar_url ?? null,
-      },
-      { onConflict: 'id' },
-    )
+      })
+    }
   } catch (err) {
     // Silently fail - don't block login
   }

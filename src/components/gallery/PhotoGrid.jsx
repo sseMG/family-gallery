@@ -191,41 +191,46 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
       </div>
 
       {showActions && (
-        <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <button
-            type="button"
-            onClick={handleFavorite}
-            disabled={favLoading || !user}
-            title={user ? 'Favorite' : 'Sign in to favorite'}
-            className={`rounded-full border bg-dark/90 p-2 transition-all ${
-              favorited
-                ? 'border-gold text-gold'
-                : 'border-gold/30 text-cream/80 hover:border-gold hover:text-gold'
-            } ${!user ? 'cursor-not-allowed opacity-50' : ''}`}
-          >
-            <Heart className={`h-4 w-4 ${favorited ? 'fill-current' : ''}`} />
-          </button>
-          <button
-            type="button"
-            onClick={handleDownload}
-            title="Download original"
-            className="rounded-full border border-gold/30 bg-dark/90 p-2 text-cream/80 transition-colors hover:border-gold hover:text-gold"
-          >
-            <Download className="h-4 w-4" />
-          </button>
-          {(photo.favorite_count ?? 0) > 0 && (
-            <span className="flex items-center rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold">
-              {photo.favorite_count}
-            </span>
-          )}
-          {(photo.comment_count ?? 0) > 0 && (
-            <span className="flex items-center gap-1 rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold">
-              <MessageCircle className="h-3 w-3" />
-              {photo.comment_count}
-            </span>
-          )}
+        <>
+          {/* Top row - Favorite, Download, Counts */}
+          <div className="absolute right-2 top-2 flex flex-wrap justify-end gap-1.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100 max-w-[calc(100%-3rem)]">
+            <button
+              type="button"
+              onClick={handleFavorite}
+              disabled={favLoading || !user}
+              title={user ? 'Favorite' : 'Sign in to favorite'}
+              className={`rounded-full border bg-dark/90 p-2 transition-all ${
+                favorited
+                  ? 'border-gold text-gold'
+                  : 'border-gold/30 text-cream/80 hover:border-gold hover:text-gold'
+              } ${!user ? 'cursor-not-allowed opacity-50' : ''}`}
+            >
+              <Heart className={`h-4 w-4 ${favorited ? 'fill-current' : ''}`} />
+            </button>
+            <button
+              type="button"
+              onClick={handleDownload}
+              title="Download original"
+              className="rounded-full border border-gold/30 bg-dark/90 p-2 text-cream/80 transition-colors hover:border-gold hover:text-gold"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+            {(photo.favorite_count ?? 0) > 0 && (
+              <span className="flex items-center rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold">
+                {photo.favorite_count}
+              </span>
+            )}
+            {(photo.comment_count ?? 0) > 0 && (
+              <span className="flex items-center gap-1 rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold">
+                <MessageCircle className="h-3 w-3" />
+                {photo.comment_count}
+              </span>
+            )}
+          </div>
+
+          {/* Bottom row - Admin actions only */}
           {isAdmin && (
-            <>
+            <div className="absolute right-2 bottom-2 flex gap-1.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
               <button
                 type="button"
                 onClick={handleEdit}
@@ -243,9 +248,9 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
               >
                 <Trash2 className="h-4 w-4" />
               </button>
-            </>
+            </div>
           )}
-        </div>
+        </>
       )}
 
       <PhotoEditModal
