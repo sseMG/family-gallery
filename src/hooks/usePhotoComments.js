@@ -47,7 +47,7 @@ export function usePhotoComments() {
       if (userIds.length > 0) {
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, display_name, avatar_url')
+          .select('id, full_name, avatar_url')
           .in('id', userIds)
         if (profilesData) {
           profilesMap = Object.fromEntries(profilesData.map(p => [p.id, p]))
@@ -59,7 +59,7 @@ export function usePhotoComments() {
         const profile = profilesMap[comment.user_id]
         return {
           ...comment,
-          user_name: profile?.display_name || 'Family Member',
+          user_name: profile?.full_name || 'Family Member',
           user_avatar: profile?.avatar_url || null,
         }
       })
@@ -208,13 +208,13 @@ export function usePhotoComments() {
               // Fetch user profile separately
               const { data: profileData } = await supabase
                 .from('profiles')
-                .select('display_name, avatar_url')
+                .select('full_name, avatar_url')
                 .eq('id', commentData.user_id)
                 .single()
 
               const transformed = {
                 ...commentData,
-                user_name: profileData?.display_name || 'Family Member',
+                user_name: profileData?.full_name || 'Family Member',
                 user_avatar: profileData?.avatar_url || null,
               }
               addComment(photoId, transformed)

@@ -79,7 +79,7 @@ export default function Navbar() {
             Family Members
           </NavLink>
 
-          {isAdmin && (
+          {user && (
             <button
               type="button"
               onClick={openUpload}

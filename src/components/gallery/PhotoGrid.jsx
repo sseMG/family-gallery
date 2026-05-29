@@ -13,7 +13,7 @@ const aspectClass = {
   square: 'aspect-square',
 }
 
-function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode = false, isSelected = false, onSelectPhoto, onEnterSelectMode }) {
+function PhotoCard({ photo, index, onPhotoClick, onPhotoCommentsClick, showActions = true, selectMode = false, isSelected = false, onSelectPhoto, onEnterSelectMode }) {
   const { user, isAdmin } = useAuth()
   const { toggleFavorite, isFavorited } = useFavorites()
   const { deletePhoto } = usePhotos()
@@ -49,6 +49,11 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
       onPhotoClick?.(index)
     }
   }, [selectMode, onSelectPhoto, photo.id, onPhotoClick, index])
+
+  const handleCommentsClick = useCallback((e) => {
+    e.stopPropagation()
+    onPhotoCommentsClick?.(index)
+  }, [index, onPhotoCommentsClick])
 
   const handleCheckboxClick = useCallback((e) => {
     e.stopPropagation()
@@ -126,7 +131,7 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
       onPointerDown={startPress}
       onPointerUp={endPress}
       onPointerCancel={endPress}
-      className={`group relative w-full overflow-hidden rounded-lg border transition-all duration-300 ${
+      className={`group relative w-full overflow-hidden rounded-lg border transition-all duration-300 select-none ${
         aspectClass[photo.aspect] || aspectClass.square
       } ${
         isSelected
@@ -170,7 +175,7 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-dark/95 via-dark/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+      <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 select-none">
         <p className="line-clamp-2 text-left font-serif text-sm text-cream">
           {photo.caption || 'Untitled'}
         </p>
@@ -185,6 +190,12 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-3 w-3 text-gold/70" />
               {photo.location}
+            </span>
+          )}
+          {photo.profiles?.full_name && (
+            <span className="inline-flex items-center gap-1">
+              <span className="h-3 w-3 rounded-full border border-gold/30 bg-gold/10 flex items-center justify-center text-[8px] text-gold">by</span>
+              {photo.profiles.full_name}
             </span>
           )}
         </div>
@@ -221,15 +232,19 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
               </span>
             )}
             {(photo.comment_count ?? 0) > 0 && (
-              <span className="flex items-center gap-1 rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold">
+              <button
+                type="button"
+                onClick={handleCommentsClick}
+                className="flex items-center gap-1 rounded-full border border-gold/20 bg-dark/90 px-2 text-xs text-gold transition-colors hover:bg-gold/20"
+              >
                 <MessageCircle className="h-3 w-3" />
                 {photo.comment_count}
-              </span>
+              </button>
             )}
           </div>
 
-          {/* Bottom row - Admin actions only */}
-          {isAdmin && (
+          {/* Bottom row - Edit/Delete for owner or admin */}
+          {(isAdmin || user?.id === photo.uploaded_by) && (
             <div className="absolute right-2 bottom-2 flex gap-1.5 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
               <button
                 type="button"
@@ -263,7 +278,7 @@ function PhotoCard({ photo, index, onPhotoClick, showActions = true, selectMode 
   )
 }
 
-export default function PhotoGrid({ photos, onPhotoClick, showActions = true, selectMode = false, selectedIds = new Set(), onSelectPhoto, onEnterSelectMode }) {
+export default function PhotoGrid({ photos, onPhotoClick, onPhotoCommentsClick, showActions = true, selectMode = false, selectedIds = new Set(), onSelectPhoto, onEnterSelectMode }) {
   if (!photos.length) {
     return (
       <p className="py-16 text-center text-cream/50">
@@ -280,6 +295,7 @@ export default function PhotoGrid({ photos, onPhotoClick, showActions = true, se
           photo={photo}
           index={index}
           onPhotoClick={onPhotoClick}
+          onPhotoCommentsClick={onPhotoCommentsClick}
           showActions={showActions}
           selectMode={selectMode}
           isSelected={selectedIds.has(photo.id)}

@@ -18,6 +18,7 @@ export default function Gallery() {
   const setUploadModalOpen = useStore((s) => s.setUploadModalOpen)
   const [year, setYear] = useState('All')
   const [lightboxIndex, setLightboxIndex] = useState(null)
+  const [showCommentsOnOpen, setShowCommentsOnOpen] = useState(false)
 
   // Bulk selection state
   const [selectMode, setSelectMode] = useState(false)
@@ -187,7 +188,7 @@ export default function Gallery() {
                 Cancel
               </button>
             )}
-            {isAdmin && user && !selectMode && (
+            {user && !selectMode && (
               <button
                 type="button"
                 onClick={() => setUploadModalOpen(true)}
@@ -286,7 +287,18 @@ export default function Gallery() {
         ) : (
           <PhotoGrid
             photos={filteredPhotos}
-            onPhotoClick={(index) => !selectMode && setLightboxIndex(index)}
+            onPhotoClick={(index) => {
+              if (!selectMode) {
+                setShowCommentsOnOpen(false)
+                setLightboxIndex(index)
+              }
+            }}
+            onPhotoCommentsClick={(index) => {
+              if (!selectMode) {
+                setShowCommentsOnOpen(true)
+                setLightboxIndex(index)
+              }
+            }}
             selectMode={selectMode}
             selectedIds={selectedIds}
             onSelectPhoto={togglePhotoSelection}
@@ -298,7 +310,11 @@ export default function Gallery() {
       <Lightbox
         photos={photos}
         activeIndex={lightboxIndex}
-        onClose={() => setLightboxIndex(null)}
+        initialShowComments={showCommentsOnOpen}
+        onClose={() => {
+          setLightboxIndex(null)
+          setShowCommentsOnOpen(false)
+        }}
         onPrev={() => setLightboxIndex((i) => (i > 0 ? i - 1 : i))}
         onNext={() =>
           setLightboxIndex((i) => (i < photos.length - 1 ? i + 1 : i))
@@ -313,40 +329,40 @@ export default function Gallery() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-gold/20 bg-dark/80 px-4 py-3 shadow-2xl backdrop-blur-md"
+            className="fixed bottom-6 left-1/2 z-50 flex max-w-[90vw] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-2xl border border-gold/20 bg-dark/90 px-3 py-3 shadow-2xl backdrop-blur-md sm:rounded-full sm:px-4"
           >
             <button
               type="button"
               onClick={handleBulkDownload}
-              className="flex items-center gap-2 rounded-full bg-gold/15 px-4 py-2 text-sm font-medium text-gold transition-colors hover:bg-gold/25"
+              className="flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/25 sm:gap-2 sm:px-4 sm:text-sm"
             >
-              <Download className="h-4 w-4" />
-              Download ({selectedIds.size})
+              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="whitespace-nowrap">Download ({selectedIds.size})</span>
             </button>
             <button
               type="button"
               onClick={() => setShowMoveModal(true)}
-              className="flex items-center gap-2 rounded-full bg-gold/15 px-4 py-2 text-sm font-medium text-gold transition-colors hover:bg-gold/25"
+              className="flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/25 sm:gap-2 sm:px-4 sm:text-sm"
             >
-              <FolderOpen className="h-4 w-4" />
+              <FolderOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Move
             </button>
             {isAdmin && (
               <button
                 type="button"
                 onClick={handleBulkDelete}
-                className="flex items-center gap-2 rounded-full bg-red-400/15 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/25"
+                className="flex items-center gap-1.5 rounded-full bg-red-400/15 px-3 py-2 text-xs font-medium text-red-400 transition-colors hover:bg-red-400/25 sm:gap-2 sm:px-4 sm:text-sm"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Delete
               </button>
             )}
             <button
               type="button"
               onClick={exitSelectMode}
-              className="flex items-center gap-2 rounded-full border border-gold/30 px-4 py-2 text-sm font-medium text-cream transition-colors hover:border-gold hover:text-gold"
+              className="flex items-center gap-1.5 rounded-full border border-gold/30 px-3 py-2 text-xs font-medium text-cream transition-colors hover:border-gold hover:text-gold sm:gap-2 sm:px-4 sm:text-sm"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Cancel
             </button>
           </motion.div>

@@ -7,6 +7,7 @@ import CommentSection from './CommentSection'
 export default function Lightbox({
   photos,
   activeIndex,
+  initialShowComments = false,
   onClose,
   onPrev,
   onNext,
@@ -14,7 +15,7 @@ export default function Lightbox({
   const photo = photos[activeIndex]
   const hasPrev = activeIndex > 0
   const hasNext = activeIndex < photos.length - 1
-  const [showComments, setShowComments] = useState(false)
+  const [showComments, setShowComments] = useState(initialShowComments)
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -24,6 +25,11 @@ export default function Lightbox({
     },
     [onClose, onPrev, onNext, hasPrev, hasNext],
   )
+
+  // Update showComments when initialShowComments changes (when clicking comment badge)
+  useEffect(() => {
+    setShowComments(initialShowComments)
+  }, [initialShowComments])
 
   useEffect(() => {
     if (activeIndex == null) return
@@ -140,6 +146,7 @@ export default function Lightbox({
               <p className="mt-1 text-sm tracking-widest text-gold">
                 {photo.year}
                 {photo.location ? ` · ${photo.location}` : ''}
+                {photo.profiles?.full_name ? ` · by ${photo.profiles.full_name}` : ''}
               </p>
             </div>
           </motion.div>

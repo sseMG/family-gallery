@@ -50,7 +50,7 @@ export function usePhotos() {
 
     const { data, error: fetchError } = await supabase
       .from('photos')
-      .select('*')
+      .select('*, profiles!uploaded_by(full_name)')
       .order('created_at', { ascending: false })
 
     if (fetchError) {
@@ -101,7 +101,7 @@ export function usePhotos() {
 
       const { data, error: fetchError } = await supabase
         .from('photos')
-        .select('*')
+        .select('*, profiles!uploaded_by(full_name)')
         .eq('year', year)
         .order('created_at', { ascending: false })
 
@@ -151,7 +151,7 @@ export function usePhotos() {
       const favoriteIds = await loadFavoriteIds(user?.id)
       const { data, error: fetchError } = await supabase
         .from('photos')
-        .select('*, favorites(count)')
+        .select('*, favorites(count), profiles!uploaded_by(full_name)')
         .eq('album_id', albumId)
         .order('created_at', { ascending: false })
 

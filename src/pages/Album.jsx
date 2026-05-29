@@ -131,6 +131,7 @@ function AlbumDetail({ albumId }) {
   const setSelectedAlbum = useStore((s) => s.setSelectedAlbum)
 
   const [lightboxIndex, setLightboxIndex] = useState(null)
+  const [showCommentsOnOpen, setShowCommentsOnOpen] = useState(false)
   const [album, setAlbum] = useState(null)
   const [albumPhotos, setAlbumPhotos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -284,14 +285,25 @@ function AlbumDetail({ albumId }) {
 
         <PhotoGrid
           photos={albumPhotos}
-          onPhotoClick={(index) => setLightboxIndex(index)}
+          onPhotoClick={(index) => {
+            setShowCommentsOnOpen(false)
+            setLightboxIndex(index)
+          }}
+          onPhotoCommentsClick={(index) => {
+            setShowCommentsOnOpen(true)
+            setLightboxIndex(index)
+          }}
         />
       </div>
 
       <Lightbox
         photos={albumPhotos}
         activeIndex={lightboxIndex}
-        onClose={() => setLightboxIndex(null)}
+        initialShowComments={showCommentsOnOpen}
+        onClose={() => {
+          setLightboxIndex(null)
+          setShowCommentsOnOpen(false)
+        }}
         onPrev={() => setLightboxIndex((i) => (i > 0 ? i - 1 : i))}
         onNext={() =>
           setLightboxIndex((i) => (i < albumPhotos.length - 1 ? i + 1 : i))

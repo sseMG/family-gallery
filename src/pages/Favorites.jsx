@@ -15,6 +15,7 @@ export default function Favorites() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lightboxIndex, setLightboxIndex] = useState(null)
+  const [showCommentsOnOpen, setShowCommentsOnOpen] = useState(false)
 
   useEffect(() => {
     if (!user) {
@@ -91,7 +92,14 @@ export default function Favorites() {
         ) : (
           <PhotoGrid
             photos={photos}
-            onPhotoClick={(index) => setLightboxIndex(index)}
+            onPhotoClick={(index) => {
+              setShowCommentsOnOpen(false)
+              setLightboxIndex(index)
+            }}
+            onPhotoCommentsClick={(index) => {
+              setShowCommentsOnOpen(true)
+              setLightboxIndex(index)
+            }}
           />
         )}
       </div>
@@ -99,7 +107,11 @@ export default function Favorites() {
       <Lightbox
         photos={photos}
         activeIndex={lightboxIndex}
-        onClose={() => setLightboxIndex(null)}
+        initialShowComments={showCommentsOnOpen}
+        onClose={() => {
+          setLightboxIndex(null)
+          setShowCommentsOnOpen(false)
+        }}
         onPrev={() => setLightboxIndex((i) => (i > 0 ? i - 1 : i))}
         onNext={() =>
           setLightboxIndex((i) => (i < photos.length - 1 ? i + 1 : i))
