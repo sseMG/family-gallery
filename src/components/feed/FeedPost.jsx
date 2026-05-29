@@ -113,8 +113,8 @@ export default function FeedPost({
         </div>
       </div>
 
-      {/* Caption */}
-      {post.caption && (
+      {/* Caption - only show if it's a real user caption, not auto-generated filename */}
+      {post.caption && !/^\d{10,}$/.test(post.caption) && (
         <div className="px-4 pb-3">
           <p className="text-sm text-cream/90">{post.caption}</p>
         </div>

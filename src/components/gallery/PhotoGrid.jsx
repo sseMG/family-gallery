@@ -182,7 +182,7 @@ function PhotoCard({ photo, index, onPhotoClick, onPhotoCommentsClick, showActio
 
       <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 select-none">
         <p className="line-clamp-2 text-left font-serif text-sm text-cream">
-          {photo.caption || 'Untitled'}
+          {photo.caption && !/^\d{10,}$/.test(photo.caption) ? photo.caption : 'Untitled'}
         </p>
         <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-cream/60">
           {photo.year != null && (
