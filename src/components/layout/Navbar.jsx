@@ -63,6 +63,9 @@ export default function Navbar() {
           <NavLink to="/" className={linkClass}>
             Home
           </NavLink>
+          <NavLink to="/feed" className={linkClass}>
+            Feed
+          </NavLink>
           <NavLink to="/gallery" className={linkClass}>
             Gallery
           </NavLink>
@@ -135,6 +138,9 @@ export default function Navbar() {
           <div className="flex flex-col gap-1">
             <NavLink to="/" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
               Home
+            </NavLink>
+            <NavLink to="/feed" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
+              Feed
             </NavLink>
             <NavLink to="/gallery" className={mobileLinkClass} onClick={() => setMenuOpen(false)}>
               Gallery

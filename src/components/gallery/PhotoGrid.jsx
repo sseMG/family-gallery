@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useFavorites } from '../../hooks/useFavorites'
 import { usePhotos } from '../../hooks/usePhotos'
 import PhotoEditModal from '../ui/PhotoEditModal'
+import ConfirmDialog from '../ui/ConfirmDialog'
 
 const aspectClass = {
   tall: 'aspect-[3/4]',
@@ -18,6 +19,7 @@ function PhotoCard({ photo, index, onPhotoClick, onPhotoCommentsClick, showActio
   const { toggleFavorite, isFavorited } = useFavorites()
   const { deletePhoto } = usePhotos()
   const [deleting, setDeleting] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -87,9 +89,12 @@ function PhotoCard({ photo, index, onPhotoClick, onPhotoCommentsClick, showActio
     }
   }
 
-  const handleDelete = async (e) => {
+  const handleDeleteClick = (e) => {
     e.stopPropagation()
-    if (!window.confirm('Delete this photo permanently?')) return
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
     setDeleting(true)
     try {
       await deletePhoto(photo.id)
@@ -256,7 +261,7 @@ function PhotoCard({ photo, index, onPhotoClick, onPhotoCommentsClick, showActio
               </button>
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 disabled={deleting}
                 title="Delete photo"
                 className="rounded-full border border-red-400/30 bg-dark/90 p-2 text-red-400/90 transition-colors hover:border-red-400 hover:bg-red-400/10 disabled:opacity-50"
@@ -265,6 +270,18 @@ function PhotoCard({ photo, index, onPhotoClick, onPhotoCommentsClick, showActio
               </button>
             </div>
           )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Photo?"
+        description="This photo will be permanently removed from your family gallery. This action cannot be undone."
+        confirmText="Delete"
+        isLoading={deleting}
+        photoPreview={getPhotoDisplayUrl(photo, 300)}
+      />
         </>
       )}
 

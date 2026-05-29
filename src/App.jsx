@@ -6,6 +6,7 @@ import Navbar from './components/layout/Navbar'
 import PageTransition from './components/layout/PageTransition'
 import SplashScreen from './components/ui/SplashScreen'
 import Home from './pages/Home'
+import Feed from './pages/Feed'
 import Gallery from './pages/Gallery'
 import Album from './pages/Album'
 import Timeline from './pages/Timeline'
@@ -27,6 +28,7 @@ function AppRoutes() {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+          <Route path="/feed" element={<PageTransition><Feed /></PageTransition>} />
           <Route path="/gallery" element={<PageTransition><Gallery /></PageTransition>} />
           <Route path="/albums" element={<PageTransition><Album /></PageTransition>} />
           <Route path="/album/:id" element={<PageTransition><Album /></PageTransition>} />
