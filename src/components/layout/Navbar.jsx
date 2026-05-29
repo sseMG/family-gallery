@@ -84,7 +84,7 @@ export default function Navbar() {
             </button>
           )}
 
-          {isAdmin && user ? (
+          {user ? (
             <div className="flex items-center gap-4">
               <UserBadge user={user} />
               <button
@@ -148,7 +148,7 @@ export default function Navbar() {
           </div>
 
           <div className="mt-4 border-t border-gold/10 pt-4">
-            {isAdmin && user ? (
+            {user ? (
               <div className="space-y-3">
                 <UserBadge user={user} />
                 <button

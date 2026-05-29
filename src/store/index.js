@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 export const useStore = create((set) => ({
   user: null,
+  userRole: null, // 'admin' or 'member'
   photos: [],
   selectedAlbum: null,
   uploadModalOpen: false,
@@ -9,6 +10,7 @@ export const useStore = create((set) => ({
   comments: {}, // { [photoId]: Comment[] }
 
   setUser: (user) => set({ user }),
+  setUserRole: (role) => set({ userRole: role }),
   setPhotos: (photos) => set({ photos }),
   setSelectedAlbum: (selectedAlbum) => set({ selectedAlbum }),
   setUploadModalOpen: (uploadModalOpen) => set({ uploadModalOpen }),

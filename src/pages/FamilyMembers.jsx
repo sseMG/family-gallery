@@ -106,8 +106,7 @@ function SocialIcons({ member, size = 'sm' }) {
 }
 
 export default function FamilyMembers() {
-  const { user } = useAuth()
-  const isAdmin = Boolean(user)
+  const { user, isAdmin } = useAuth()
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeGen, setActiveGen] = useState('all')
