@@ -141,7 +141,7 @@ export default function Lightbox({
 
             <div className="mt-5 text-center">
               <p className="font-serif text-lg text-cream sm:text-xl">
-                {photo.caption && !/^\d{10,}$/.test(photo.caption) ? photo.caption : 'Untitled'}
+                {photo.caption && !/^[\d\s]+n?$/.test(photo.caption) ? photo.caption : 'Untitled'}
               </p>
               <p className="mt-1 text-sm tracking-widest text-gold">
                 {photo.year}

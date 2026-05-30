@@ -93,7 +93,7 @@ export function RecentMemories() {
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-dark/80 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                {photo.caption && !/^\d{10,}$/.test(photo.caption) && (
+                {photo.caption && !/^[\d\s]+n?$/.test(photo.caption) && (
                   <p className="absolute bottom-2 left-2 right-2 truncate text-xs text-cream opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                     {photo.caption}
                   </p>

@@ -44,7 +44,7 @@ function TimelineYear({ year, photos }) {
               />
             </div>
             <figcaption className="mt-2 line-clamp-2 text-sm text-cream/70">
-              {photo.caption && !/^\d{10,}$/.test(photo.caption) ? photo.caption : 'Untitled'}
+              {photo.caption && !/^[\d\s]+n?$/.test(photo.caption) ? photo.caption : 'Untitled'}
             </figcaption>
           </motion.figure>
         ))}
